@@ -1,6 +1,6 @@
 const DEFAULT_PASSWORD = 'admin123';
 
-function handleCORS(request: Request) {
+function handleCORS(request) {
   const origin = request.headers.get('Origin') || '';
   const allowedOrigins = [
     'http://localhost:8788',
@@ -25,7 +25,7 @@ function handleCORS(request: Request) {
   };
 }
 
-function parseCookies(cookieHeader: string): Record<string, string> {
+function parseCookies(cookieHeader) {
   if (!cookieHeader) return {};
   return Object.fromEntries(
     cookieHeader.split('; ').map(c => {
@@ -35,8 +35,8 @@ function parseCookies(cookieHeader: string): Record<string, string> {
   );
 }
 
-export const POST: APIRoute = async ({ request, locals }) => {
-  const env = (locals as any).runtime?.env || {};
+export async function onRequestPost(context) {
+  const { request, env } = context;
   const adminPassword = env.ADMIN_PASSWORD || DEFAULT_PASSWORD;
 
   try {
@@ -72,10 +72,10 @@ export const POST: APIRoute = async ({ request, locals }) => {
       headers: { 'Content-Type': 'application/json', ...handleCORS(request) },
     });
   }
-};
+}
 
-export const GET: APIRoute = async ({ request, locals }) => {
-  const env = (locals as any).runtime?.env || {};
+export async function onRequestGet(context) {
+  const { request, env } = context;
   const adminPassword = env.ADMIN_PASSWORD || DEFAULT_PASSWORD;
 
   const cookieHeader = request.headers.get('Cookie') || '';
@@ -88,11 +88,17 @@ export const GET: APIRoute = async ({ request, locals }) => {
     status: 200,
     headers: { 'Content-Type': 'application/json', ...handleCORS(request) },
   });
-};
+}
 
-export const OPTIONS: APIRoute = async ({ request }) => {
+export async function onRequestOptions() {
   return new Response(null, {
     status: 204,
-    headers: handleCORS(request),
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Cookie',
+      'Access-Control-Allow-Credentials': 'true',
+      'Access-Control-Max-Age': '86400',
+    },
   });
-};
+}

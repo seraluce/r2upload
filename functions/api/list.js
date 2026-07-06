@@ -1,7 +1,6 @@
 import { S3Client, ListObjectsV2Command, DeleteObjectCommand } from '@aws-sdk/client-s3';
-import type { APIRoute } from 'astro';
 
-function handleCORS(request: Request) {
+function handleCORS(request) {
   const origin = request.headers.get('Origin') || '';
   const allowedOrigins = [
     'http://localhost:8788',
@@ -25,7 +24,7 @@ function handleCORS(request: Request) {
   };
 }
 
-function getS3Client(env: any) {
+function getS3Client(env) {
   const accountId = env.CF_ACCOUNT_ID;
   const accessKeyId = env.R2_ACCESS_KEY_ID;
   const secretAccessKey = env.R2_SECRET_ACCESS_KEY;
@@ -44,8 +43,8 @@ function getS3Client(env: any) {
   });
 }
 
-export const GET: APIRoute = async ({ request, locals, url }) => {
-  const env = (locals as any).runtime?.env || {};
+export async function onRequestGet(context) {
+  const { request, env, url } = context;
   const bucketName = env.R2_BUCKET_NAME || 'arguable';
 
   try {
@@ -67,7 +66,7 @@ export const GET: APIRoute = async ({ request, locals, url }) => {
       size: item.Size,
       lastModified: item.LastModified?.toISOString(),
       etag: item.ETag?.replace(/"/g, ''),
-    })).sort((a, b) => new Date(b.lastModified).getTime() - new Date(a.lastModified).getTime());
+    })).sort((a, b) => new Date(b.lastModified) - new Date(a.lastModified));
 
     return new Response(JSON.stringify({
       files: files,
@@ -85,10 +84,10 @@ export const GET: APIRoute = async ({ request, locals, url }) => {
       headers: { 'Content-Type': 'application/json', ...handleCORS(request) },
     });
   }
-};
+}
 
-export const DELETE: APIRoute = async ({ request, locals, url }) => {
-  const env = (locals as any).runtime?.env || {};
+export async function onRequestDelete(context) {
+  const { request, env, url } = context;
   const bucketName = env.R2_BUCKET_NAME || 'arguable';
   const key = url.searchParams.get('key');
 
@@ -123,11 +122,16 @@ export const DELETE: APIRoute = async ({ request, locals, url }) => {
       headers: { 'Content-Type': 'application/json', ...handleCORS(request) },
     });
   }
-};
+}
 
-export const OPTIONS: APIRoute = async ({ request }) => {
+export async function onRequestOptions() {
   return new Response(null, {
     status: 204,
-    headers: handleCORS(request),
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, DELETE, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type',
+      'Access-Control-Max-Age': '86400',
+    },
   });
-};
+}

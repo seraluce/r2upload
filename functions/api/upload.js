@@ -1,8 +1,7 @@
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import type { APIRoute } from 'astro';
 
-function handleCORS(request: Request) {
+function handleCORS(request) {
   const origin = request.headers.get('Origin') || '';
   const allowedOrigins = [
     'http://localhost:8788',
@@ -26,8 +25,8 @@ function handleCORS(request: Request) {
   };
 }
 
-export const POST: APIRoute = async ({ request, locals }) => {
-  const env = (locals as any).runtime?.env || {};
+export async function onRequestPost(context) {
+  const { request, env } = context;
 
   try {
     const body = await request.json();
@@ -122,11 +121,16 @@ export const POST: APIRoute = async ({ request, locals }) => {
       headers: { 'Content-Type': 'application/json', ...handleCORS(request) },
     });
   }
-};
+}
 
-export const OPTIONS: APIRoute = async ({ request }) => {
+export async function onRequestOptions() {
   return new Response(null, {
     status: 204,
-    headers: handleCORS(request),
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type',
+      'Access-Control-Max-Age': '86400',
+    },
   });
-};
+}

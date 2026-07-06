@@ -1,298 +1,637 @@
-<script>
-  import MainLayout from '../layouts/MainLayout.astro';
-  import Header from '../components/Header.astro';
-  import UploadZone from '../components/UploadZone.astro';
-  import FileInfo from '../components/FileInfo.astro';
-  import Actions from '../components/Actions.astro';
-  import ProgressBar from '../components/ProgressBar.astro';
-  import Message from '../components/Message.astro';
-  import FileList from '../components/FileList.astro';
-  import Footer from '../components/Footer.astro';
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>R2 Upload</title>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    :root {
+      --primary: #3b82f6;
+      --primary-hover: #2563eb;
+      --success: #10b981;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --bg: #ffffff;
+      --bg-secondary: #f8fafc;
+      --bg-tertiary: #f1f5f9;
+      --border: #e2e8f0;
+      --border-focus: #93c5fd;
+      --text: #1e293b;
+      --text-secondary: #64748b;
+      --text-muted: #94a3b8;
+      --shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+      --radius: 8px;
+      --radius-lg: 12px;
+      --transition: 0.2s ease;
+    }
 
-  let currentFile: File | null = null;
-  let isUploading = false;
-  let uploadPercent = 0;
-  let uploadStatus = 'Ready to upload';
-  let messageText = 'Select a file and click upload, or drag and drop';
-  let messageType: 'info' | 'success' | 'error' | 'warning' = 'info';
-  let fileStatus: 'ready' | 'uploading' | 'success' | 'error' = 'ready';
-  let fileStatusText = 'Ready';
-  let showReset = false;
+    [data-theme="dark"] {
+      --bg: #0f172a;
+      --bg-secondary: #1e293b;
+      --bg-tertiary: #334155;
+      --border: #334155;
+      --border-focus: #60a5fa;
+      --text: #f8fafc;
+      --text-secondary: #cbd5e1;
+      --text-muted: #64748b;
+      --shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    }
 
-  interface R2File {
-    key: string;
-    name: string;
-    size: number;
-    lastModified: string;
-    etag: string;
-  }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
 
-  let r2Files: R2File[] = [];
-  let filesLoading = false;
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: var(--bg-secondary);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.5;
+      transition: background var(--transition), color var(--transition);
+    }
 
-  const MAX_SIZE = 100 * 1024 * 1024;
+    .page-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 24px;
+    }
 
-  const formatFileSize = (bytes: number): string => {
-    if (bytes === 0) return '0 B';
-    const units = ['B', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(1024));
-    const size = (bytes / Math.pow(1024, i)).toFixed(1);
-    return `${size} ${units[i]}`;
-  };
+    .card {
+      background: var(--bg);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      width: 100%;
+      max-width: 680px;
+      padding: 40px 36px;
+      transition: background var(--transition), border-color var(--transition);
+    }
 
-  const sanitizeFilename = (filename: string): string => {
-    return filename.replace(/[^a-zA-Z0-9\u4e00-\u9fa5.\-_\s]/g, '');
-  };
+    /* Header */
+    .header { margin-bottom: 32px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
+    .header-top { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+    .header-content { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .header h1 { font-size: 22px; font-weight: 600; color: var(--text); display: flex; align-items: center; gap: 10px; letter-spacing: -0.01em; }
+    .header .icon-cloud { color: var(--primary); flex-shrink: 0; stroke-width: 1.8; }
+    .header .badge { font-size: 11px; font-weight: 500; padding: 2px 10px; border-radius: 20px; background: var(--bg-tertiary); color: var(--text-secondary); border: 1px solid var(--border); letter-spacing: 0.3px; text-transform: uppercase; }
+    .header .badge-success { background: rgba(16, 185, 129, 0.1); color: var(--success); border-color: rgba(16, 185, 129, 0.3); }
+    .header p { color: var(--text-muted); font-size: 14px; margin-top: 6px; }
+    .theme-toggle { background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: var(--radius); padding: 6px; cursor: pointer; transition: all var(--transition); display: flex; align-items: center; justify-content: center; }
+    .theme-toggle:hover { background: var(--border); }
+    .theme-toggle .icon { width: 20px; height: 20px; color: var(--text-secondary); stroke-width: 1.8; }
 
-  const getFileExtension = (filename: string): string => {
-    return filename.substring(filename.lastIndexOf('.')).toLowerCase();
-  };
+    /* Upload Zone */
+    .upload-zone { border: 2px dashed var(--border); border-radius: var(--radius-lg); padding: 48px 20px; text-align: center; cursor: pointer; transition: border-color var(--transition), background var(--transition); background: var(--bg-secondary); margin-bottom: 24px; }
+    .upload-zone:hover { border-color: var(--primary); background: rgba(59, 130, 246, 0.05); }
+    .upload-zone.dragover { border-color: var(--primary); background: rgba(59, 130, 246, 0.1); border-style: solid; }
+    .upload-zone.disabled { opacity: 0.5; cursor: not-allowed; }
+    .upload-zone .icon-upload { display: block; margin: 0 auto 14px; color: var(--text-muted); stroke-width: 1.5; transition: color var(--transition); }
+    .upload-zone:hover .icon-upload { color: var(--primary); }
+    .upload-zone .title { font-size: 16px; font-weight: 500; color: var(--text); }
+    .upload-zone .subtitle { color: var(--text-muted); font-size: 13px; margin-top: 4px; }
+    .upload-zone .hint { color: var(--text-muted); font-size: 12px; margin-top: 14px; display: inline-block; padding: 2px 14px; border-radius: 20px; background: var(--bg); border: 1px solid var(--border); }
+    #fileInput { display: none; }
 
-  const loadFiles = async () => {
-    filesLoading = true;
-    try {
-      const response = await fetch('/api/list');
-      if (response.ok) {
-        const data = await response.json();
-        r2Files = data.files || [];
+    /* File Info */
+    .file-info { background: var(--bg-secondary); border-radius: var(--radius); border: 1px solid var(--border); padding: 12px 18px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; min-height: 52px; gap: 12px; flex-wrap: wrap; }
+    .file-info .details { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
+    .file-info .icon-file { color: var(--text-muted); flex-shrink: 0; stroke-width: 1.8; }
+    .file-info .name { font-weight: 500; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; }
+    .file-info .size { font-size: 12px; color: var(--text-muted); background: var(--bg); padding: 1px 10px; border-radius: 20px; border: 1px solid var(--border); white-space: nowrap; }
+    .file-info .empty { color: var(--text-muted); font-weight: 400; font-size: 14px; }
+    .status-badge { font-size: 12px; font-weight: 500; padding: 3px 12px; border-radius: 20px; white-space: nowrap; display: flex; align-items: center; gap: 6px; border: 1px solid var(--border); background: var(--bg); }
+    .status-badge .icon { width: 14px; height: 14px; stroke-width: 2; }
+    .status-badge.ready { color: var(--text-secondary); }
+    .status-badge.ready .icon { color: var(--text-muted); }
+    .status-badge.uploading { color: var(--warning); border-color: rgba(245, 158, 11, 0.3); background: rgba(245, 158, 11, 0.1); animation: pulse 1.2s ease-in-out infinite; }
+    .status-badge.uploading .icon { color: var(--warning); }
+    .status-badge.success { color: var(--success); border-color: rgba(16, 185, 129, 0.3); background: rgba(16, 185, 129, 0.1); }
+    .status-badge.success .icon { color: var(--success); }
+    .status-badge.error { color: var(--danger); border-color: rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.1); }
+    .status-badge.error .icon { color: var(--danger); }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+
+    /* Actions */
+    .actions { display: flex; gap: 10px; flex-wrap: wrap; }
+    .actions .btn { flex: 1; min-width: 100px; padding: 10px 20px; border: 1px solid var(--border); border-radius: var(--radius); font-size: 14px; font-weight: 500; cursor: pointer; transition: all var(--transition); display: flex; align-items: center; justify-content: center; gap: 8px; background: var(--bg); color: var(--text-secondary); font-family: inherit; }
+    .actions .btn .icon { width: 18px; height: 18px; stroke-width: 1.8; flex-shrink: 0; }
+    .actions .btn:hover:not(:disabled) { background: var(--bg-tertiary); border-color: var(--text-muted); }
+    .actions .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .actions .btn-primary { background: var(--primary); border-color: var(--primary); color: white; }
+    .actions .btn-primary:hover:not(:disabled) { background: var(--primary-hover); border-color: var(--primary-hover); }
+    .actions .btn-primary .icon { color: white; }
+    .actions .btn-secondary .icon { color: var(--text-muted); }
+
+    /* Progress */
+    .progress-wrapper { margin-top: 18px; display: none; }
+    .progress-wrapper.active { display: block; }
+    .progress-bar { width: 100%; height: 4px; background: var(--bg-tertiary); border-radius: 2px; overflow: hidden; }
+    .progress-bar .fill { height: 100%; background: var(--primary); border-radius: 2px; width: 0%; transition: width 0.3s ease; }
+    .progress-text { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted); margin-top: 6px; }
+
+    /* Message */
+    .message { margin-top: 18px; padding: 12px 16px; border-radius: var(--radius); font-size: 13px; display: flex; align-items: center; gap: 10px; border: 1px solid var(--border); background: var(--bg); transition: all var(--transition); }
+    .message .icon { width: 18px; height: 18px; flex-shrink: 0; stroke-width: 2; }
+    .message.info { border-color: var(--border); color: var(--text-secondary); }
+    .message.info .icon { color: var(--text-muted); }
+    .message.success { border-color: rgba(16, 185, 129, 0.3); background: rgba(16, 185, 129, 0.1); color: var(--success); }
+    .message.success .icon { color: var(--success); }
+    .message.error { border-color: rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.1); color: var(--danger); }
+    .message.error .icon { color: var(--danger); }
+    .message.warning { border-color: rgba(245, 158, 11, 0.3); background: rgba(245, 158, 11, 0.1); color: var(--warning); }
+    .message.warning .icon { color: var(--warning); }
+
+    /* File List */
+    .files-section { margin-top: 32px; padding-top: 20px; border-top: 1px solid var(--border); }
+    .files-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+    .files-header h3 { font-size: 14px; font-weight: 600; color: var(--text); display: flex; align-items: center; gap: 8px; }
+    .files-header .icon { width: 18px; height: 18px; color: var(--text-muted); stroke-width: 1.8; }
+    .file-count { font-size: 12px; color: var(--text-muted); font-weight: 400; margin-left: 4px; }
+    .refresh-btn { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-muted); background: none; border: 1px solid var(--border); cursor: pointer; padding: 6px 10px; border-radius: var(--radius); transition: all var(--transition); font-family: inherit; }
+    .refresh-btn:hover { background: var(--bg-tertiary); color: var(--text-secondary); }
+    .refresh-btn .icon { width: 14px; height: 14px; }
+    .refresh-btn.loading .icon { animation: spin 1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .files-list { max-height: 300px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+    .file-item { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--bg-secondary); border-radius: var(--radius); border: 1px solid var(--border); font-size: 13px; transition: all var(--transition); }
+    .file-item:hover { border-color: var(--text-muted); }
+    .file-item .icon-file { width: 18px; height: 18px; color: var(--text-muted); flex-shrink: 0; stroke-width: 1.8; }
+    .file-item .info { flex: 1; min-width: 0; }
+    .file-item .info .name { color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
+    .file-item .info .meta { color: var(--text-muted); font-size: 11px; margin-top: 2px; }
+    .file-item .actions { display: flex; gap: 4px; flex-shrink: 0; }
+    .file-item .action-btn { width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; transition: all var(--transition); padding: 0; }
+    .file-item .action-btn:hover { background: var(--bg-tertiary); }
+    .file-item .action-btn .icon { width: 14px; height: 14px; stroke-width: 1.8; color: var(--text-muted); }
+    .file-item .action-btn.delete:hover { border-color: rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.1); }
+    .file-item .action-btn.delete:hover .icon { color: var(--danger); }
+    .empty-state { text-align: center; padding: 32px; color: var(--text-muted); font-size: 13px; }
+    .empty-state .icon { width: 32px; height: 32px; margin-bottom: 8px; opacity: 0.4; }
+    .loading-state { text-align: center; padding: 32px; color: var(--text-muted); font-size: 13px; }
+    .loading-state .icon { width: 24px; height: 24px; margin-bottom: 8px; animation: spin 1s linear infinite; }
+
+    /* Footer */
+    .footer { margin-top: 32px; padding-top: 20px; border-top: 1px solid var(--border); text-align: center; font-size: 12px; color: var(--text-muted); display: flex; align-items: center; justify-content: center; gap: 6px; flex-wrap: wrap; }
+    .footer .icon { width: 14px; height: 14px; stroke-width: 1.8; }
+    .footer .divider { color: var(--border); }
+    .footer .admin-link { color: var(--text-muted); text-decoration: none; display: inline-flex; align-items: center; gap: 4px; transition: color var(--transition); }
+    .footer .admin-link:hover { color: var(--text-secondary); }
+
+    @media (max-width: 600px) {
+      .card { padding: 24px 18px; }
+      .upload-zone { padding: 32px 16px; }
+      .file-info { flex-direction: column; align-items: stretch; gap: 8px; }
+      .actions .btn { min-width: 80px; padding: 8px 14px; font-size: 13px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page-container">
+    <div class="card">
+      <!-- Header -->
+      <div class="header">
+        <div class="header-top">
+          <div class="header-content">
+            <h1>
+              <i data-lucide="cloud" class="icon-cloud" width="26" height="26"></i>
+              R2 Upload
+            </h1>
+            <span class="badge">Pages</span>
+            <span class="badge badge-success">Presigned</span>
+          </div>
+          <button class="theme-toggle" id="themeToggle">
+            <i data-lucide="moon" class="icon" id="themeIcon"></i>
+          </button>
+        </div>
+        <p>Direct upload to R2 using presigned URLs - No Worker proxy</p>
+      </div>
+
+      <!-- Upload Zone -->
+      <div class="upload-zone" id="uploadZone">
+        <i data-lucide="upload" class="icon-upload" width="48" height="48"></i>
+        <div class="title">Click or drag file to upload</div>
+        <div class="subtitle">All file types supported</div>
+        <div class="hint">Max 100MB - Single file</div>
+        <input type="file" id="fileInput" />
+      </div>
+
+      <!-- File Info -->
+      <div class="file-info" id="fileInfo">
+        <div class="details">
+          <i data-lucide="file" class="icon-file" width="18" height="18"></i>
+          <span class="empty" id="fileName">No file selected</span>
+          <span class="size" id="fileSize" style="display:none;"></span>
+        </div>
+        <span class="status-badge ready" id="statusBadge">
+          <i data-lucide="circle" class="icon"></i>
+          <span id="statusText">Ready</span>
+        </span>
+      </div>
+
+      <!-- Actions -->
+      <div class="actions">
+        <button class="btn btn-secondary" id="clearBtn">
+          <i data-lucide="x" class="icon"></i>
+          Clear
+        </button>
+        <button class="btn btn-primary" id="uploadBtn" disabled>
+          <i data-lucide="arrow-up" class="icon" id="uploadBtnIcon"></i>
+          <span id="uploadBtnText">Upload to R2</span>
+        </button>
+      </div>
+
+      <!-- Progress -->
+      <div class="progress-wrapper" id="progressWrapper">
+        <div class="progress-bar">
+          <div class="fill" id="progressFill" style="width: 0%;"></div>
+        </div>
+        <div class="progress-text">
+          <span id="progressPercent">0%</span>
+          <span id="progressStatus">Ready</span>
+        </div>
+      </div>
+
+      <!-- Message -->
+      <div class="message info" id="message">
+        <i data-lucide="info" class="icon" id="messageIcon"></i>
+        <span id="messageText">Select a file and click upload, or drag and drop</span>
+      </div>
+
+      <!-- File List -->
+      <div class="files-section">
+        <div class="files-header">
+          <h3>
+            <i data-lucide="folder-open" class="icon"></i>
+            R2 Files
+            <span class="file-count" id="fileCount">(0)</span>
+          </h3>
+          <button class="refresh-btn" id="refreshBtn">
+            <i data-lucide="refresh-cw" class="icon"></i>
+            Refresh
+          </button>
+        </div>
+        <div id="filesListContainer">
+          <div class="loading-state">
+            <i data-lucide="loader-circle" class="icon"></i>
+            <div>Loading files...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="footer">
+        <i data-lucide="lock" class="icon"></i>
+        Frontend direct upload to R2
+        <span class="divider">/</span>
+        Presigned URL valid for 5 minutes
+        <span class="divider">/</span>
+        <a href="/admin" class="admin-link">
+          <i data-lucide="settings" class="icon"></i>
+          Admin
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+
+    let currentFile = null;
+    let isUploading = false;
+    const MAX_SIZE = 100 * 1024 * 1024;
+
+    // Theme toggle
+    document.getElementById('themeToggle').addEventListener('click', () => {
+      const currentTheme = document.documentElement.getAttribute('data-theme');
+      const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', newTheme);
+      localStorage.setItem('theme', newTheme);
+      updateThemeIcon();
+    });
+
+    function updateThemeIcon() {
+      const theme = document.documentElement.getAttribute('data-theme');
+      const icon = document.getElementById('themeIcon');
+      icon.setAttribute('data-lucide', theme === 'dark' ? 'sun' : 'moon');
+      lucide.createIcons();
+    }
+
+    // Utilities
+    function formatFileSize(bytes) {
+      if (bytes === 0) return '0 B';
+      const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(1024));
+      return `${(bytes / Math.pow(1024, i)).toFixed(1)} ${units[i]}`;
+    }
+
+    function formatTime(isoString) {
+      const date = new Date(isoString);
+      return date.toLocaleString('zh-CN', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    }
+
+    function getFileIcon(filename) {
+      const ext = filename.substring(filename.lastIndexOf('.')).toLowerCase();
+      const iconMap = {
+        '.pdf':'file-text','.doc':'file-text','.docx':'file-text','.txt':'file-text','.md':'file-text',
+        '.jpg':'image','.jpeg':'image','.png':'image','.gif':'image','.svg':'image','.webp':'image','.bmp':'image',
+        '.mp4':'video','.mov':'video','.avi':'video','.webm':'video','.mkv':'video',
+        '.mp3':'music','.wav':'music','.flac':'music','.ogg':'music',
+        '.zip':'archive','.rar':'archive','.tar':'archive','.gz':'archive','.7z':'archive',
+        '.json':'file-code','.js':'file-code','.ts':'file-code','.html':'file-code','.css':'file-code','.py':'file-code',
+        '.csv':'file-spreadsheet','.xls':'file-spreadsheet','.xlsx':'file-spreadsheet',
+        '.ppt':'file-presentation','.pptx':'file-presentation',
+      };
+      return iconMap[ext] || 'file';
+    }
+
+    function setMessage(text, type) {
+      const msg = document.getElementById('message');
+      const msgText = document.getElementById('messageText');
+      const msgIcon = document.getElementById('messageIcon');
+      const iconMap = { info:'info', success:'check-circle', error:'alert-circle', warning:'alert-triangle' };
+      msg.className = `message ${type}`;
+      msgText.textContent = text;
+      msgIcon.setAttribute('data-lucide', iconMap[type] || 'info');
+      lucide.createIcons();
+    }
+
+    function setStatus(status, text) {
+      const badge = document.getElementById('statusBadge');
+      const statusText = document.getElementById('statusText');
+      const badgeIcon = badge.querySelector('.icon');
+      const iconMap = { ready:'circle', uploading:'loader-circle', success:'check-circle', error:'x-circle' };
+      badge.className = `status-badge ${status}`;
+      statusText.textContent = text;
+      badgeIcon.setAttribute('data-lucide', iconMap[status] || 'circle');
+      lucide.createIcons();
+    }
+
+    function updateProgress(percent, status) {
+      document.getElementById('progressFill').style.width = `${Math.min(percent, 100)}%`;
+      document.getElementById('progressPercent').textContent = `${Math.min(percent, 100)}%`;
+      document.getElementById('progressStatus').textContent = status;
+    }
+
+    function resetFileSelection() {
+      currentFile = null;
+      document.getElementById('fileInput').value = '';
+      document.getElementById('fileName').textContent = 'No file selected';
+      document.getElementById('fileName').className = 'empty';
+      document.getElementById('fileSize').style.display = 'none';
+      document.getElementById('uploadBtn').disabled = true;
+      document.getElementById('clearBtn').style.display = 'inline-flex';
+      document.getElementById('clearBtn').querySelector('#uploadBtnIcon') || null;
+      setStatus('ready', 'Ready');
+      updateProgress(0, 'Ready to upload');
+      document.getElementById('progressWrapper').classList.remove('active');
+    }
+
+    function handleFileSelect(file) {
+      if (file.size > MAX_SIZE) {
+        setMessage(`File too large (${formatFileSize(file.size)}), max ${formatFileSize(MAX_SIZE)}`, 'error');
+        return;
       }
-    } catch (err) {
-      console.error('Failed to load files:', err);
-    } finally {
-      filesLoading = false;
-    }
-  };
 
-  const handleFileSelect = (file: File) => {
-    if (file.size > MAX_SIZE) {
-      setMessage(`File too large (${formatFileSize(file.size)}), please select a file smaller than ${formatFileSize(MAX_SIZE)}`, 'error');
+      const dangerousExt = ['.php', '.exe', '.sh', '.bat', '.js', '.html', '.htm', '.asp', '.jsp'];
+      const ext = file.name.substring(file.lastIndexOf('.')).toLowerCase();
+      if (dangerousExt.includes(ext)) {
+        setMessage(`Upload of ${ext} files is not allowed`, 'error');
+        return;
+      }
+
+      currentFile = file;
+      const nameEl = document.getElementById('fileName');
+      const sizeEl = document.getElementById('fileSize');
+      const iconEl = document.querySelector('.file-info .icon-file');
+      nameEl.textContent = file.name;
+      nameEl.className = 'name';
+      sizeEl.textContent = formatFileSize(file.size);
+      sizeEl.style.display = 'inline-block';
+      iconEl.setAttribute('data-lucide', getFileIcon(file.name));
+      document.getElementById('uploadBtn').disabled = false;
+      setStatus('ready', 'Ready');
+      updateProgress(0, 'Ready to upload');
+      setMessage(`Selected: ${file.name} (${formatFileSize(file.size)})`, 'info');
+      lucide.createIcons();
+    }
+
+    // Upload zone events
+    const uploadZone = document.getElementById('uploadZone');
+    const fileInput = document.getElementById('fileInput');
+
+    uploadZone.addEventListener('click', () => {
+      if (!isUploading) fileInput.click();
+    });
+
+    uploadZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      if (!isUploading) uploadZone.classList.add('dragover');
+    });
+
+    uploadZone.addEventListener('dragleave', (e) => {
+      e.preventDefault();
+      uploadZone.classList.remove('dragover');
+    });
+
+    uploadZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      uploadZone.classList.remove('dragover');
+      if (isUploading) return;
+      const files = e.dataTransfer.files;
+      if (files.length > 0) handleFileSelect(files[0]);
+    });
+
+    fileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) handleFileSelect(file);
+    });
+
+    // Clear button
+    document.getElementById('clearBtn').addEventListener('click', () => {
+      if (isUploading) {
+        setMessage('Upload in progress, cannot clear', 'warning');
+        return;
+      }
       resetFileSelection();
-      return;
-    }
+      setMessage('File selection cleared', 'info');
+    });
 
-    const dangerousExt = ['.php', '.exe', '.sh', '.bat', '.js', '.html', '.htm', '.asp', '.jsp'];
-    const ext = getFileExtension(file.name);
-    if (dangerousExt.includes(ext)) {
-      setMessage(`Upload of ${ext} files is not allowed`, 'error');
-      resetFileSelection();
-      return;
-    }
+    // Upload button
+    document.getElementById('uploadBtn').addEventListener('click', async () => {
+      if (!currentFile || isUploading) return;
 
-    const safeName = sanitizeFilename(file.name);
-    currentFile = safeName !== file.name ? new File([file], safeName, { type: file.type }) : file;
-
-    fileStatus = 'ready';
-    fileStatusText = 'Ready';
-    showReset = false;
-    resetProgress();
-    setMessage(`Selected file: ${currentFile.name} (${formatFileSize(currentFile.size)})`, 'info');
-  };
-
-  const resetFileSelection = () => {
-    currentFile = null;
-    fileStatus = 'ready';
-    fileStatusText = 'Ready';
-    showReset = false;
-    resetProgress();
-  };
-
-  const resetProgress = () => {
-    uploadPercent = 0;
-    uploadStatus = 'Ready to upload';
-  };
-
-  const setMessage = (text: string, type: 'info' | 'success' | 'error' | 'warning') => {
-    messageText = text;
-    messageType = type;
-  };
-
-  const updateProgress = (percent: number, status: string) => {
-    uploadPercent = percent;
-    uploadStatus = status;
-  };
-
-  const handleUpload = async () => {
-    if (!currentFile || isUploading) return;
-
-    isUploading = true;
-    fileStatus = 'uploading';
-    fileStatusText = 'Getting URL...';
-    setMessage('Getting upload URL...', 'info');
-    updateProgress(0, 'Requesting presigned URL...');
-
-    try {
+      isUploading = true;
       const file = currentFile;
+      document.getElementById('uploadBtn').disabled = true;
+      document.getElementById('clearBtn').disabled = true;
+      document.getElementById('uploadBtnText').textContent = 'Uploading...';
+      const uploadIcon = document.getElementById('uploadBtnIcon');
+      uploadIcon.setAttribute('data-lucide', 'loader-circle');
+      lucide.createIcons();
 
-      const response = await fetch('/api/upload', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          filename: file.name,
-          contentType: file.type || 'application/octet-stream',
-          size: file.size,
-        }),
-      });
+      setStatus('uploading', 'Getting URL...');
+      setMessage('Getting upload URL...', 'info');
+      document.getElementById('progressWrapper').classList.add('active');
+      updateProgress(0, 'Requesting presigned URL...');
 
-      if (!response.ok) {
-        let errorMsg = `Failed to get upload URL (${response.status})`;
-        try {
-          const errData = await response.json();
-          if (errData && errData.error) errorMsg = errData.error;
-        } catch (_) {}
-        throw new Error(errorMsg);
-      }
-
-      const data = await response.json();
-      if (!data.uploadURL) {
-        throw new Error('Upload URL not received');
-      }
-
-      const uploadURL = data.uploadURL;
-
-      fileStatusText = 'Uploading...';
-      setMessage(`Uploading ${file.name} ...`, 'info');
-      updateProgress(5, 'Starting upload...');
-
-      await new Promise((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        xhr.open('PUT', uploadURL, true);
-        xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
-
-        xhr.upload.addEventListener('progress', (e) => {
-          if (e.lengthComputable) {
-            const percent = Math.round((e.loaded / e.total) * 90) + 5;
-            updateProgress(percent, `Uploading ${percent}%`);
-          }
+      try {
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            filename: file.name,
+            contentType: file.type || 'application/octet-stream',
+            size: file.size,
+          }),
         });
 
-        xhr.onload = function() {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            resolve(xhr);
-          } else {
-            reject(new Error(`Upload failed (${xhr.status})`));
-          }
-        };
+        if (!response.ok) {
+          let errorMsg = `Failed to get upload URL (${response.status})`;
+          try {
+            const errData = await response.json();
+            if (errData.error) errorMsg = errData.error;
+          } catch (_) {}
+          throw new Error(errorMsg);
+        }
 
-        xhr.onerror = function() {
-          reject(new Error('Network error, upload interrupted'));
-        };
+        const data = await response.json();
+        if (!data.uploadURL) throw new Error('Upload URL not received');
 
-        xhr.ontimeout = function() {
-          reject(new Error('Upload timed out'));
-        };
+        setStatus('uploading', 'Uploading...');
+        setMessage(`Uploading ${file.name}...`, 'info');
+        updateProgress(5, 'Starting upload...');
 
-        xhr.timeout = 120000;
-        xhr.send(file);
-      });
+        await new Promise((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          xhr.open('PUT', data.uploadURL, true);
+          xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
 
-      updateProgress(100, 'Upload complete!');
-      fileStatus = 'success';
-      fileStatusText = 'Uploaded';
-      showReset = true;
-      setMessage(`Upload successful! File "${file.name}" stored to R2`, 'success');
-      if (data.key) {
-        messageText += ` (Path: ${data.key})`;
-      }
+          xhr.upload.addEventListener('progress', (e) => {
+            if (e.lengthComputable) {
+              const percent = Math.round((e.loaded / e.total) * 90) + 5;
+              updateProgress(percent, `Uploading ${percent}%`);
+            }
+          });
 
-      loadFiles();
+          xhr.onload = function() {
+            if (xhr.status >= 200 && xhr.status < 300) resolve(xhr);
+            else reject(new Error(`Upload failed (${xhr.status})`));
+          };
 
-    } catch (err) {
-      console.error('Upload error:', err);
-      fileStatus = 'error';
-      fileStatusText = 'Failed';
-      setMessage(`Upload failed: ${(err as Error).message || 'Unknown error'}`, 'error');
-    } finally {
-      isUploading = false;
-    }
-  };
+          xhr.onerror = () => reject(new Error('Network error, upload interrupted'));
+          xhr.ontimeout = () => reject(new Error('Upload timed out'));
+          xhr.timeout = 120000;
+          xhr.send(file);
+        });
 
-  const handleClear = () => {
-    if (isUploading) {
-      setMessage('Upload in progress, cannot clear', 'warning');
-      return;
-    }
-    resetFileSelection();
-    setMessage('File selection cleared', 'info');
-  };
-
-  const handleReset = () => {
-    resetFileSelection();
-    setMessage('Select a file and click upload, or drag and drop', 'info');
-  };
-
-  const handleDeleteFile = async (key: string) => {
-    if (!confirm('Delete this file?')) return;
-
-    try {
-      const response = await fetch(`/api/list?key=${encodeURIComponent(key)}`, {
-        method: 'DELETE',
-      });
-
-      if (response.ok) {
-        setMessage('File deleted successfully', 'success');
+        updateProgress(100, 'Upload complete!');
+        setStatus('success', 'Uploaded');
+        setMessage(`Upload successful! "${file.name}" stored to R2 (Path: ${data.key})`, 'success');
+        document.getElementById('clearBtn').style.display = 'none';
         loadFiles();
-      } else {
-        throw new Error('Delete failed');
-      }
-    } catch (err) {
-      setMessage(`Delete failed: ${(err as Error).message}`, 'error');
-    }
-  };
 
-  const handleKeydown = (e: KeyboardEvent) => {
-    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-      if (!isUploading && currentFile) {
+      } catch (err) {
+        console.error('Upload error:', err);
+        setStatus('error', 'Failed');
+        setMessage(`Upload failed: ${err.message || 'Unknown error'}`, 'error');
+      } finally {
+        isUploading = false;
+        document.getElementById('clearBtn').disabled = false;
+        document.getElementById('uploadBtnText').textContent = 'Upload to R2';
+        uploadIcon.setAttribute('data-lucide', 'arrow-up');
+        lucide.createIcons();
+      }
+    });
+
+    // File list
+    async function loadFiles() {
+      const container = document.getElementById('filesListContainer');
+      const refreshBtn = document.getElementById('refreshBtn');
+      refreshBtn.classList.add('loading');
+      container.innerHTML = `<div class="loading-state"><i data-lucide="loader-circle" class="icon"></i><div>Loading files...</div></div>`;
+      lucide.createIcons();
+
+      try {
+        const response = await fetch('/api/list');
+        if (!response.ok) throw new Error('Failed to load files');
+        const data = await response.json();
+        const files = data.files || [];
+        document.getElementById('fileCount').textContent = `(${files.length})`;
+
+        if (files.length === 0) {
+          container.innerHTML = `<div class="empty-state"><i data-lucide="folder" class="icon"></i><div>No files uploaded yet</div></div>`;
+        } else {
+          container.innerHTML = `<div class="files-list">${files.map(file => `
+            <div class="file-item">
+              <i data-lucide="${getFileIcon(file.name)}" class="icon-file"></i>
+              <div class="info">
+                <div class="name" title="${file.name}">${file.name}</div>
+                <div class="meta">${formatFileSize(file.size)} - ${formatTime(file.lastModified)}</div>
+              </div>
+              <div class="actions">
+                <button class="action-btn delete" data-key="${file.key}" data-name="${file.name}" title="Delete">
+                  <i data-lucide="trash-2" class="icon"></i>
+                </button>
+              </div>
+            </div>
+          `).join('')}</div>`;
+        }
+        lucide.createIcons();
+      } catch (err) {
+        container.innerHTML = `<div class="empty-state"><i data-lucide="alert-circle" class="icon" style="color:var(--danger);opacity:0.5;"></i><div>Failed to load files</div></div>`;
+        lucide.createIcons();
+      } finally {
+        refreshBtn.classList.remove('loading');
+      }
+    }
+
+    document.getElementById('refreshBtn').addEventListener('click', loadFiles);
+
+    // Delete file
+    document.getElementById('filesListContainer').addEventListener('click', async (e) => {
+      const btn = e.target.closest('.action-btn.delete');
+      if (!btn) return;
+      const key = btn.dataset.key;
+      const name = btn.dataset.name;
+      if (!confirm(`Delete "${name}"?`)) return;
+
+      try {
+        const response = await fetch(`/api/list?key=${encodeURIComponent(key)}`, { method: 'DELETE' });
+        if (response.ok) {
+          setMessage('File deleted successfully', 'success');
+          loadFiles();
+        } else {
+          throw new Error('Delete failed');
+        }
+      } catch (err) {
+        setMessage(`Delete failed: ${err.message}`, 'error');
+      }
+    });
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        if (!isUploading && currentFile) {
+          e.preventDefault();
+          document.getElementById('uploadBtn').click();
+        }
+      }
+    });
+
+    // Beforeunload warning
+    window.addEventListener('beforeunload', (e) => {
+      if (isUploading) {
         e.preventDefault();
-        handleUpload();
+        e.returnValue = 'File is uploading, are you sure you want to leave?';
       }
-    }
-  };
+    });
 
-  const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-    if (isUploading) {
-      e.preventDefault();
-      e.returnValue = 'File is uploading, are you sure you want to leave?';
-    }
-  };
-
-  import.meta.onMount(() => {
+    // Init
+    updateThemeIcon();
     loadFiles();
-
-    document.addEventListener('keydown', handleKeydown);
-    window.addEventListener('beforeunload', handleBeforeUnload);
-
     lucide.createIcons();
-  });
-</script>
-
-<MainLayout>
-  <Header />
-  <UploadZone onFileSelect={handleFileSelect} disabled={isUploading} />
-  <FileInfo 
-    filename={currentFile?.name} 
-    size={currentFile?.size}
-    status={fileStatus}
-    statusText={fileStatusText}
-  />
-  <Actions 
-    onClear={handleClear}
-    onUpload={handleUpload}
-    onReset={handleReset}
-    disabled={!currentFile}
-    isUploading={isUploading}
-    showReset={showReset}
-  />
-  <ProgressBar 
-    percent={uploadPercent} 
-    status={uploadStatus}
-    visible={isUploading || uploadPercent > 0}
-  />
-  <Message text={messageText} type={messageType} />
-  <FileList 
-    files={r2Files} 
-    loading={filesLoading}
-    onDelete={handleDeleteFile}
-    onRefresh={loadFiles}
-  />
-  <Footer />
-</MainLayout>
+  </script>
+</body>
+</html>

@@ -1,7 +1,6 @@
 import { S3Client, ListObjectsV2Command, DeleteObjectCommand } from '@aws-sdk/client-s3';
-import type { APIRoute } from 'astro';
 
-function handleCORS(request: Request) {
+function handleCORS(request) {
   const origin = request.headers.get('Origin') || '';
   const allowedOrigins = [
     'http://localhost:8788',
@@ -26,7 +25,7 @@ function handleCORS(request: Request) {
   };
 }
 
-function parseCookies(cookieHeader: string): Record<string, string> {
+function parseCookies(cookieHeader) {
   if (!cookieHeader) return {};
   return Object.fromEntries(
     cookieHeader.split('; ').map(c => {
@@ -36,14 +35,14 @@ function parseCookies(cookieHeader: string): Record<string, string> {
   );
 }
 
-function checkAuth(request: Request, env: any): boolean {
+function checkAuth(request, env) {
   const cookieHeader = request.headers.get('Cookie') || '';
   const cookies = parseCookies(cookieHeader);
   const adminPassword = env.ADMIN_PASSWORD || 'admin123';
   return cookies.admin_auth === adminPassword;
 }
 
-function getS3Client(env: any) {
+function getS3Client(env) {
   const accountId = env.CF_ACCOUNT_ID;
   const accessKeyId = env.R2_ACCESS_KEY_ID;
   const secretAccessKey = env.R2_SECRET_ACCESS_KEY;
@@ -62,8 +61,8 @@ function getS3Client(env: any) {
   });
 }
 
-export const GET: APIRoute = async ({ request, locals, url }) => {
-  const env = (locals as any).runtime?.env || {};
+export async function onRequestGet(context) {
+  const { request, env, url } = context;
 
   if (!checkAuth(request, env)) {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), {
@@ -78,11 +77,11 @@ export const GET: APIRoute = async ({ request, locals, url }) => {
     const prefix = url.searchParams.get('prefix') || 'uploads/';
     const maxKeys = parseInt(url.searchParams.get('maxKeys') || '200');
 
-    let allFiles: any[] = [];
-    let continuationToken: string | null = null;
+    let allFiles = [];
+    let continuationToken = null;
 
     do {
-      const params: any = {
+      const params = {
         Bucket: bucketName,
         Prefix: prefix,
         MaxKeys: Math.min(maxKeys - allFiles.length, 1000),
@@ -107,7 +106,7 @@ export const GET: APIRoute = async ({ request, locals, url }) => {
       continuationToken = response.IsTruncated ? response.NextContinuationToken : null;
     } while (continuationToken && allFiles.length < maxKeys);
 
-    allFiles.sort((a, b) => new Date(b.lastModified).getTime() - new Date(a.lastModified).getTime());
+    allFiles.sort((a, b) => new Date(b.lastModified) - new Date(a.lastModified));
 
     return new Response(JSON.stringify({
       files: allFiles,
@@ -124,10 +123,10 @@ export const GET: APIRoute = async ({ request, locals, url }) => {
       headers: { 'Content-Type': 'application/json', ...handleCORS(request) },
     });
   }
-};
+}
 
-export const DELETE: APIRoute = async ({ request, locals, url }) => {
-  const env = (locals as any).runtime?.env || {};
+export async function onRequestDelete(context) {
+  const { request, env, url } = context;
 
   if (!checkAuth(request, env)) {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), {
@@ -171,11 +170,17 @@ export const DELETE: APIRoute = async ({ request, locals, url }) => {
       headers: { 'Content-Type': 'application/json', ...handleCORS(request) },
     });
   }
-};
+}
 
-export const OPTIONS: APIRoute = async ({ request }) => {
+export async function onRequestOptions() {
   return new Response(null, {
     status: 204,
-    headers: handleCORS(request),
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, DELETE, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Cookie',
+      'Access-Control-Allow-Credentials': 'true',
+      'Access-Control-Max-Age': '86400',
+    },
   });
-};
+}
