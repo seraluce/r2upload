@@ -1,30 +1,5 @@
 const DEFAULT_PASSWORD = 'admin123';
 
-function handleCORS(request) {
-  const origin = request.headers.get('Origin') || '';
-  const allowedOrigins = [
-    'http://localhost:8788',
-    'http://localhost:4321',
-    'https://*.pages.dev',
-  ];
-
-  const isAllowed = allowedOrigins.some(pattern => {
-    if (pattern.includes('*')) {
-      const regex = new RegExp(pattern.replace(/\*/g, '.*'));
-      return regex.test(origin);
-    }
-    return origin === pattern;
-  });
-
-  return {
-    'Access-Control-Allow-Origin': isAllowed ? origin : 'https://*.pages.dev',
-    'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Cookie',
-    'Access-Control-Allow-Credentials': 'true',
-    'Access-Control-Max-Age': '86400',
-  };
-}
-
 function parseCookies(cookieHeader) {
   if (!cookieHeader) return {};
   return Object.fromEntries(
@@ -49,7 +24,7 @@ export async function onRequestPost(context) {
         message: 'Login successful'
       }), {
         status: 200,
-        headers: { 'Content-Type': 'application/json', ...handleCORS(request) },
+        headers: { 'Content-Type': 'application/json' },
       });
 
       response.headers.set('Set-Cookie', `admin_auth=${password}; Path=/; HttpOnly; SameSite=Lax; Max-Age=86400`);
@@ -60,7 +35,7 @@ export async function onRequestPost(context) {
         error: 'Invalid password'
       }), {
         status: 401,
-        headers: { 'Content-Type': 'application/json', ...handleCORS(request) },
+        headers: { 'Content-Type': 'application/json' },
       });
     }
   } catch (error) {
@@ -69,7 +44,7 @@ export async function onRequestPost(context) {
       error: error.message
     }), {
       status: 400,
-      headers: { 'Content-Type': 'application/json', ...handleCORS(request) },
+      headers: { 'Content-Type': 'application/json' },
     });
   }
 }
@@ -86,7 +61,7 @@ export async function onRequestGet(context) {
     authenticated: isAuthed
   }), {
     status: 200,
-    headers: { 'Content-Type': 'application/json', ...handleCORS(request) },
+    headers: { 'Content-Type': 'application/json' },
   });
 }
 

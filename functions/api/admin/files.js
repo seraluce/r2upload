@@ -1,30 +1,5 @@
 import { S3Client, ListObjectsV2Command, DeleteObjectCommand } from '@aws-sdk/client-s3';
 
-function handleCORS(request) {
-  const origin = request.headers.get('Origin') || '';
-  const allowedOrigins = [
-    'http://localhost:8788',
-    'http://localhost:4321',
-    'https://*.pages.dev',
-  ];
-
-  const isAllowed = allowedOrigins.some(pattern => {
-    if (pattern.includes('*')) {
-      const regex = new RegExp(pattern.replace(/\*/g, '.*'));
-      return regex.test(origin);
-    }
-    return origin === pattern;
-  });
-
-  return {
-    'Access-Control-Allow-Origin': isAllowed ? origin : 'https://*.pages.dev',
-    'Access-Control-Allow-Methods': 'GET, DELETE, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Cookie',
-    'Access-Control-Allow-Credentials': 'true',
-    'Access-Control-Max-Age': '86400',
-  };
-}
-
 function parseCookies(cookieHeader) {
   if (!cookieHeader) return {};
   return Object.fromEntries(
@@ -67,7 +42,7 @@ export async function onRequestGet(context) {
   if (!checkAuth(request, env)) {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), {
       status: 401,
-      headers: { 'Content-Type': 'application/json', ...handleCORS(request) },
+      headers: { 'Content-Type': 'application/json' },
     });
   }
 
@@ -113,14 +88,14 @@ export async function onRequestGet(context) {
       count: allFiles.length,
     }), {
       status: 200,
-      headers: { 'Content-Type': 'application/json', ...handleCORS(request) },
+      headers: { 'Content-Type': 'application/json' },
     });
   } catch (error) {
     return new Response(JSON.stringify({
       error: error.message || 'Server internal error',
     }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json', ...handleCORS(request) },
+      headers: { 'Content-Type': 'application/json' },
     });
   }
 }
@@ -131,7 +106,7 @@ export async function onRequestDelete(context) {
   if (!checkAuth(request, env)) {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), {
       status: 401,
-      headers: { 'Content-Type': 'application/json', ...handleCORS(request) },
+      headers: { 'Content-Type': 'application/json' },
     });
   }
 
@@ -140,7 +115,7 @@ export async function onRequestDelete(context) {
   if (!key) {
     return new Response(JSON.stringify({ error: 'Missing key parameter' }), {
       status: 400,
-      headers: { 'Content-Type': 'application/json', ...handleCORS(request) },
+      headers: { 'Content-Type': 'application/json' },
     });
   }
 
@@ -160,14 +135,14 @@ export async function onRequestDelete(context) {
       key: key,
     }), {
       status: 200,
-      headers: { 'Content-Type': 'application/json', ...handleCORS(request) },
+      headers: { 'Content-Type': 'application/json' },
     });
   } catch (error) {
     return new Response(JSON.stringify({
       error: error.message || 'Server internal error',
     }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json', ...handleCORS(request) },
+      headers: { 'Content-Type': 'application/json' },
     });
   }
 }

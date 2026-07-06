@@ -1,30 +1,6 @@
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
-function handleCORS(request) {
-  const origin = request.headers.get('Origin') || '';
-  const allowedOrigins = [
-    'http://localhost:8788',
-    'http://localhost:4321',
-    'https://*.pages.dev',
-  ];
-
-  const isAllowed = allowedOrigins.some(pattern => {
-    if (pattern.includes('*')) {
-      const regex = new RegExp(pattern.replace(/\*/g, '.*'));
-      return regex.test(origin);
-    }
-    return origin === pattern;
-  });
-
-  return {
-    'Access-Control-Allow-Origin': isAllowed ? origin : 'https://*.pages.dev',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
-    'Access-Control-Max-Age': '86400',
-  };
-}
-
 export async function onRequestPost(context) {
   const { request, env } = context;
 
@@ -35,7 +11,7 @@ export async function onRequestPost(context) {
     if (!filename) {
       return new Response(JSON.stringify({ error: '缺少文件名参数' }), {
         status: 400,
-        headers: { 'Content-Type': 'application/json', ...handleCORS(request) },
+        headers: { 'Content-Type': 'application/json' },
       });
     }
 
@@ -45,18 +21,18 @@ export async function onRequestPost(context) {
         error: `文件大小超过限制 (最大 ${MAX_SIZE / 1024 / 1024}MB)`
       }), {
         status: 413,
-        headers: { 'Content-Type': 'application/json', ...handleCORS(request) },
+        headers: { 'Content-Type': 'application/json' },
       });
     }
 
     const ext = filename.substring(filename.lastIndexOf('.')).toLowerCase();
-    const dangerousExt = ['.php', '.exe', '.sh', '.bat', '.js', '.html', '.htm', '.asp', '.jsp', '.py', '.pl'];
+    const dangerousExt = ['.php', '.exe', '.sh', '.bat', '.html', '.htm', '.asp', '.jsp', '.py', '.pl'];
     if (dangerousExt.includes(ext)) {
       return new Response(JSON.stringify({
         error: `不允许上传 ${ext} 类型的文件`
       }), {
         status: 403,
-        headers: { 'Content-Type': 'application/json', ...handleCORS(request) },
+        headers: { 'Content-Type': 'application/json' },
       });
     }
 
@@ -79,7 +55,7 @@ export async function onRequestPost(context) {
         error: '服务器配置错误: 缺少 R2 凭证',
       }), {
         status: 500,
-        headers: { 'Content-Type': 'application/json', ...handleCORS(request) },
+        headers: { 'Content-Type': 'application/json' },
       });
     }
 
@@ -110,7 +86,7 @@ export async function onRequestPost(context) {
       bucket: bucketName,
     }), {
       status: 200,
-      headers: { 'Content-Type': 'application/json', ...handleCORS(request) },
+      headers: { 'Content-Type': 'application/json' },
     });
 
   } catch (error) {
@@ -118,7 +94,7 @@ export async function onRequestPost(context) {
       error: error.message || '服务器内部错误',
     }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json', ...handleCORS(request) },
+      headers: { 'Content-Type': 'application/json' },
     });
   }
 }
