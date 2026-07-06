@@ -454,64 +454,53 @@
       uploadIcon.setAttribute('data-lucide', 'loader-circle');
       renderIcons();
 
-      setStatus('uploading', '获取地址...');
-      setMessage('正在获取上传地址...', 'info');
+      setStatus('uploading', '上传中...');
+      setMessage(`正在上传 ${file.name}...`, 'info');
       document.getElementById('progressWrapper').classList.add('active');
-      updateProgress(0, '请求预签名 URL...');
+      updateProgress(0, '开始上传...');
 
       try {
-        const response = await fetch('/api/upload', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            filename: file.name,
-            contentType: file.type || 'application/octet-stream',
-            size: file.size,
-          }),
-        });
-
-        if (!response.ok) {
-          let errorMsg = `获取上传地址失败（${response.status}）`;
-          try {
-            const errData = await response.json();
-            if (errData.error) errorMsg = errData.error;
-          } catch (_) {}
-          throw new Error(errorMsg);
-        }
-
-        const data = await response.json();
-        if (!data.uploadURL) throw new Error('未收到上传地址');
-
-        setStatus('uploading', '上传中...');
-        setMessage(`正在上传 ${file.name}...`, 'info');
-        updateProgress(5, '开始上传...');
+        const formData = new FormData();
+        formData.append('file', file);
 
         await new Promise((resolve, reject) => {
           const xhr = new XMLHttpRequest();
-          xhr.open('PUT', data.uploadURL, true);
-          xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
+          xhr.open('POST', '/api/upload', true);
 
           xhr.upload.addEventListener('progress', (e) => {
             if (e.lengthComputable) {
-              const percent = Math.round((e.loaded / e.total) * 90) + 5;
+              const percent = Math.round((e.loaded / e.total) * 100);
               updateProgress(percent, `上传中 ${percent}%`);
             }
           });
 
-          xhr.onload = function() {
-            if (xhr.status >= 200 && xhr.status < 300) resolve(xhr);
-            else reject(new Error(`上传失败（${xhr.status}）`));
+          xhr.onload = async function() {
+            if (xhr.status >= 200 && xhr.status < 300) {
+              try {
+                const data = JSON.parse(xhr.responseText);
+                resolve(data);
+              } catch (e) {
+                reject(new Error('响应解析失败'));
+              }
+            } else {
+              try {
+                const errData = JSON.parse(xhr.responseText);
+                reject(new Error(errData.error || `上传失败（${xhr.status}）`));
+              } catch (e) {
+                reject(new Error(`上传失败（${xhr.status}）`));
+              }
+            }
           };
 
           xhr.onerror = () => reject(new Error('网络错误，上传中断'));
           xhr.ontimeout = () => reject(new Error('上传超时'));
           xhr.timeout = 120000;
-          xhr.send(file);
+          xhr.send(formData);
         });
 
         updateProgress(100, '上传完成');
         setStatus('success', '已完成');
-        setMessage(`上传成功！"${file.name}" 已存储到 R2（路径：${data.key}）`, 'success');
+        setMessage(`上传成功！"${file.name}" 已存储到 R2`, 'success');
         document.getElementById('clearBtn').style.display = 'none';
         loadFiles();
 

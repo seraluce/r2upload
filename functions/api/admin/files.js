@@ -1,5 +1,3 @@
-import { S3Client, ListObjectsV2Command, DeleteObjectCommand } from '@aws-sdk/client-s3';
-
 function parseCookies(cookieHeader) {
   if (!cookieHeader) return {};
   return Object.fromEntries(
@@ -17,25 +15,6 @@ function checkAuth(request, env) {
   return cookies.admin_auth === adminPassword;
 }
 
-function getS3Client(env) {
-  const accountId = env.CF_ACCOUNT_ID;
-  const accessKeyId = env.R2_ACCESS_KEY_ID;
-  const secretAccessKey = env.R2_SECRET_ACCESS_KEY;
-
-  if (!accountId || !accessKeyId || !secretAccessKey) {
-    throw new Error('Missing R2 credentials');
-  }
-
-  return new S3Client({
-    region: 'auto',
-    endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
-    credentials: {
-      accessKeyId: accessKeyId,
-      secretAccessKey: secretAccessKey,
-    },
-  });
-}
-
 export async function onRequestGet(context) {
   const { request, env } = context;
   const url = new URL(request.url);
@@ -48,39 +27,38 @@ export async function onRequestGet(context) {
   }
 
   try {
-    const bucketName = env.R2_BUCKET_NAME || 'arguable';
-    const s3Client = getS3Client(env);
+    const bucket = env.BUCKET;
+    if (!bucket) {
+      return new Response(JSON.stringify({ error: 'R2 bucket not bound' }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
     const prefix = url.searchParams.get('prefix') || '';
     const maxKeys = parseInt(url.searchParams.get('maxKeys') || '1000');
 
     let allFiles = [];
-    let continuationToken = null;
+    let cursor = undefined;
 
     do {
-      const params = {
-        Bucket: bucketName,
-        Prefix: prefix,
-        MaxKeys: Math.min(maxKeys - allFiles.length, 1000),
-      };
+      const result = await bucket.list({
+        prefix: prefix,
+        cursor: cursor,
+        limit: Math.min(maxKeys - allFiles.length, 1000),
+      });
 
-      if (continuationToken) {
-        params.ContinuationToken = continuationToken;
+      for (const item of result.objects) {
+        allFiles.push({
+          key: item.key,
+          name: item.key.split('/').pop() || '',
+          size: item.size,
+          lastModified: item.uploaded?.toISOString() || item.lastModified?.toISOString(),
+        });
       }
 
-      const command = new ListObjectsV2Command(params);
-      const response = await s3Client.send(command);
-
-      const files = (response.Contents || []).map(item => ({
-        key: item.Key,
-        name: item.Key?.split('/').pop() || '',
-        size: item.Size,
-        lastModified: item.LastModified?.toISOString(),
-        etag: item.ETag?.replace(/"/g, ''),
-      }));
-
-      allFiles = [...allFiles, ...files];
-      continuationToken = response.IsTruncated ? response.NextContinuationToken : null;
-    } while (continuationToken && allFiles.length < maxKeys);
+      cursor = result.truncated ? result.cursor : undefined;
+    } while (cursor && allFiles.length < maxKeys);
 
     allFiles.sort((a, b) => new Date(b.lastModified) - new Date(a.lastModified));
 
@@ -122,15 +100,15 @@ export async function onRequestDelete(context) {
   }
 
   try {
-    const bucketName = env.R2_BUCKET_NAME || 'arguable';
-    const s3Client = getS3Client(env);
+    const bucket = env.BUCKET;
+    if (!bucket) {
+      return new Response(JSON.stringify({ error: 'R2 bucket not bound' }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
 
-    const command = new DeleteObjectCommand({
-      Bucket: bucketName,
-      Key: key,
-    });
-
-    await s3Client.send(command);
+    await bucket.delete(key);
 
     return new Response(JSON.stringify({
       success: true,
