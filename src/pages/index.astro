@@ -83,13 +83,6 @@
     .file-info .name { font-size: 13px; font-weight: 500; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .file-info .empty { font-size: 13px; color: var(--text-muted); }
     .file-info .size { font-size: 12px; color: var(--text-muted); font-family: var(--mono); white-space: nowrap; }
-    .status-badge { font-size: 12px; font-weight: 500; padding: 2px 10px; border-radius: 6px; white-space: nowrap; display: flex; align-items: center; gap: 4px; border: 1px solid var(--border); }
-    .status-badge .icon { width: 12px; height: 12px; stroke-width: 2; }
-    .status-badge.ready { color: var(--text-muted); }
-    .status-badge.uploading { color: var(--text); border-color: var(--border-dark); }
-    .status-badge.success { color: var(--text); border-color: var(--text); background: var(--bg-tertiary); }
-    .status-badge.error { color: var(--text); border-color: var(--text); }
-
     /* Actions */
     .actions { display: flex; gap: 8px; margin-bottom: 12px; }
     .btn { flex: 1; padding: 8px 16px; border: 1px solid var(--border); border-radius: var(--radius); font-size: 13px; font-weight: 500; cursor: pointer; transition: background 0.15s ease; display: flex; align-items: center; justify-content: center; gap: 6px; background: var(--bg); color: var(--text); font-family: var(--font); }
@@ -171,10 +164,6 @@
           <span class="empty" id="fileName">未选择文件</span>
           <span class="size" id="fileSize" style="display:none;"></span>
         </div>
-        <span class="status-badge ready" id="statusBadge">
-          <i data-lucide="circle" class="icon"></i>
-          <span id="statusText">就绪</span>
-        </span>
       </div>
 
       <!-- Actions -->
@@ -289,17 +278,6 @@
       renderIcons();
     }
 
-    function setStatus(status, text) {
-      const badge = document.getElementById('statusBadge');
-      const statusText = document.getElementById('statusText');
-      const badgeIcon = badge.querySelector('.icon');
-      const iconMap = { ready:'circle', uploading:'loader-circle', success:'check-circle', error:'x-circle' };
-      badge.className = `status-badge ${status}`;
-      statusText.textContent = text;
-      badgeIcon.setAttribute('data-lucide', iconMap[status] || 'circle');
-      renderIcons();
-    }
-
     function updateProgress(percent, status) {
       document.getElementById('progressFill').style.width = `${Math.min(percent, 100)}%`;
       document.getElementById('progressPercent').textContent = `${Math.min(percent, 100)}%`;
@@ -314,7 +292,6 @@
       document.getElementById('fileSize').style.display = 'none';
       document.getElementById('uploadBtn').disabled = true;
       document.getElementById('clearBtn').style.display = 'flex';
-      setStatus('ready', '就绪');
       updateProgress(0, '就绪');
       document.getElementById('progressWrapper').classList.remove('active');
     }
@@ -336,15 +313,21 @@
       const nameEl = document.getElementById('fileName');
       const sizeEl = document.getElementById('fileSize');
       const iconEl = document.querySelector('.file-info .icon-file');
-      nameEl.textContent = file.name;
+
+      // 缩短超长文件名用于显示
+      const displayName = file.name.length > 40
+        ? file.name.substring(0, 20) + '...' + file.name.substring(file.name.length - 15)
+        : file.name;
+
+      nameEl.textContent = displayName;
+      nameEl.title = file.name;
       nameEl.className = 'name';
       sizeEl.textContent = formatFileSize(file.size);
       sizeEl.style.display = 'inline';
       iconEl.setAttribute('data-lucide', getFileIcon(file.name));
       document.getElementById('uploadBtn').disabled = false;
-      setStatus('ready', '就绪');
       updateProgress(0, '就绪');
-      setMessage(`已选择：${file.name}（${formatFileSize(file.size)}）`, 'info');
+      setMessage(`已选择：${displayName}（${formatFileSize(file.size)}）`, 'info');
       renderIcons();
     }
 
@@ -400,7 +383,6 @@
       uploadIcon.setAttribute('data-lucide', 'loader-circle');
       renderIcons();
 
-      setStatus('uploading', '上传中...');
       setMessage(`正在上传 ${file.name}...`, 'info');
       document.getElementById('progressWrapper').classList.add('active');
       updateProgress(0, '开始上传...');
@@ -445,13 +427,11 @@
         });
 
         updateProgress(100, '上传完成');
-        setStatus('success', '已完成');
         setMessage(`上传成功！"${file.name}" 已存储到 R2`, 'success');
         document.getElementById('clearBtn').style.display = 'none';
 
       } catch (err) {
         console.error('Upload error:', err);
-        setStatus('error', '失败');
         setMessage(`上传失败：${err.message || '未知错误'}`, 'error');
       } finally {
         isUploading = false;

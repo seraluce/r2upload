@@ -101,7 +101,8 @@
     .file-item { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-bottom: 1px solid var(--border); font-size: 13px; transition: background 0.15s ease; }
     .file-item:last-child { border-bottom: none; }
     .file-item:hover { background: var(--bg-secondary); }
-    .file-item .icon-file { width: 16px; height: 16px; color: var(--text-muted); stroke-width: 1.5; flex-shrink: 0; }
+    .file-item .thumb { width: 40px; height: 40px; border-radius: var(--radius); object-fit: cover; border: 1px solid var(--border); flex-shrink: 0; }
+    .file-item .icon-file { width: 40px; height: 40px; color: var(--text-muted); stroke-width: 1.5; flex-shrink: 0; padding: 8px; }
     .file-item .info { flex: 1; min-width: 0; }
     .file-item .info .name { color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
     .file-item .info .path { color: var(--text-muted); font-size: 11px; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--mono); }
@@ -357,12 +358,17 @@
         lucide.createIcons();
         return;
       }
-      list.innerHTML = `<div class="files-list">${filteredFiles.map(f => `
+      list.innerHTML = `<div class="files-list">${filteredFiles.map(f => {
+        const fileUrl = getFileUrl(f.key);
+        const isImg = isImage(f.name);
+        const thumb = isImg && r2PublicUrlPrefix ? `<img src="${fileUrl}" class="thumb" alt="" loading="lazy" />` : `<i data-lucide="${getFileIcon(f.name)}" class="icon-file"></i>`;
+        const shortUrl = fileUrl.length > 55 ? fileUrl.substring(0, 30) + '...' + fileUrl.substring(fileUrl.length - 20) : fileUrl;
+        return `
         <div class="file-item">
-          <i data-lucide="${getFileIcon(f.name)}" class="icon-file"></i>
+          ${thumb}
           <div class="info">
             <div class="name" title="${f.name}">${f.name}</div>
-            <div class="path" title="${getFileUrl(f.key)}">${getFileUrl(f.key)}</div>
+            <div class="path" title="${fileUrl}">${shortUrl}</div>
             <div class="meta">${formatFileSize(f.size)} · ${formatTime(f.lastModified)}</div>
           </div>
           <div class="actions">
@@ -371,7 +377,7 @@
             <button class="action-btn delete" data-action="delete" data-key="${f.key}" data-name="${f.name}" title="删除"><i data-lucide="trash-2" class="icon"></i></button>
           </div>
         </div>
-      `).join('')}</div>`;
+      `}).join('')}</div>`;
       lucide.createIcons();
     }
 
