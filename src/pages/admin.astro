@@ -252,7 +252,7 @@
   </div>
 
   <script is:inline>
-    const R2_PUBLIC_URL_PREFIX = '';
+    let r2PublicUrlPrefix = '';
 
     const savedTheme = localStorage.getItem('theme') || 'light';
     document.documentElement.setAttribute('data-theme', savedTheme);
@@ -340,6 +340,7 @@
         const d = await r.json();
         currentFiles = d.files || [];
         filteredFiles = [...currentFiles];
+        r2PublicUrlPrefix = d.publicUrlPrefix || '';
         renderFiles();
       } catch {
         list.innerHTML = `<div class="empty-state"><i data-lucide="alert-circle" class="icon" style="opacity:0.4;"></i><div>加载失败</div></div>`;
@@ -361,7 +362,7 @@
           <i data-lucide="${getFileIcon(f.name)}" class="icon-file"></i>
           <div class="info">
             <div class="name" title="${f.name}">${f.name}</div>
-            <div class="path" title="${f.key}">${f.key}</div>
+            <div class="path" title="${getFileUrl(f.key)}">${getFileUrl(f.key)}</div>
             <div class="meta">${formatFileSize(f.size)} · ${formatTime(f.lastModified)}</div>
           </div>
           <div class="actions">
@@ -390,8 +391,12 @@
       } catch { showToast('删除失败', 'error'); }
     }
 
+    function getFileUrl(key) {
+      return r2PublicUrlPrefix ? `${r2PublicUrlPrefix}/${key}` : key;
+    }
+
     function copyUrl(key) {
-      const url = R2_PUBLIC_URL_PREFIX ? `${R2_PUBLIC_URL_PREFIX}/${key}` : key;
+      const url = getFileUrl(key);
       navigator.clipboard.writeText(url).then(() => showToast('链接已复制', 'success')).catch(() => showToast('复制失败', 'error'));
     }
 
@@ -405,14 +410,15 @@
       lucide.createIcons();
       modal.classList.add('active');
       try {
+        const fileUrl = getFileUrl(key);
         if (isImage(name)) {
-          body.innerHTML = `<img src="${R2_PUBLIC_URL_PREFIX}/${key}" alt="${name}" />`;
+          body.innerHTML = `<img src="${fileUrl}" alt="${name}" />`;
         } else if (isVideo(name)) {
-          body.innerHTML = `<video src="${R2_PUBLIC_URL_PREFIX}/${key}" controls autoplay></video>`;
+          body.innerHTML = `<video src="${fileUrl}" controls autoplay></video>`;
         } else if (isAudio(name)) {
-          body.innerHTML = `<audio src="${R2_PUBLIC_URL_PREFIX}/${key}" controls autoplay></audio>`;
+          body.innerHTML = `<audio src="${fileUrl}" controls autoplay></audio>`;
         } else if (isText(name)) {
-          const tr = await fetch(`${R2_PUBLIC_URL_PREFIX}/${key}`);
+          const tr = await fetch(`${fileUrl}`);
           const text = await tr.text();
           body.innerHTML = `<div class="text-preview">${escapeHtml(text)}</div>`;
         } else {

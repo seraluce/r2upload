@@ -62,9 +62,12 @@ export async function onRequestGet(context) {
 
     allFiles.sort((a, b) => new Date(b.lastModified) - new Date(a.lastModified));
 
+    const publicUrlPrefix = env.R2_PUBLIC_URL || '';
+
     return new Response(JSON.stringify({
       files: allFiles,
       count: allFiles.length,
+      publicUrlPrefix: publicUrlPrefix,
     }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
