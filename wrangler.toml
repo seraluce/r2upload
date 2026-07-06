@@ -1,5 +1,6 @@
 name = "r2-uploader"
 compatibility_date = "2025-02-01"
+compatibility_flags = ["nodejs_compat"]
 
 [[r2_buckets]]
 binding = "BUCKET"

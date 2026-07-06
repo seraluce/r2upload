@@ -1,11 +1,12 @@
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import type { APIRoute } from 'astro';
 
-function handleCORS(request) {
+function handleCORS(request: Request) {
   const origin = request.headers.get('Origin') || '';
   const allowedOrigins = [
     'http://localhost:8788',
-    'http://localhost:5173',
+    'http://localhost:4321',
     'https://*.pages.dev',
   ];
 
@@ -25,25 +26,8 @@ function handleCORS(request) {
   };
 }
 
-export async function onRequest(context) {
-  const { request, env } = context;
-
-  if (request.method === 'OPTIONS') {
-    return new Response(null, {
-      status: 204,
-      headers: handleCORS(request),
-    });
-  }
-
-  if (request.method !== 'POST') {
-    return new Response(JSON.stringify({ error: 'Method not allowed' }), {
-      status: 405,
-      headers: {
-        'Content-Type': 'application/json',
-        ...handleCORS(request),
-      },
-    });
-  }
+export const POST: APIRoute = async ({ request, locals }) => {
+  const env = (locals as any).runtime?.env || {};
 
   try {
     const body = await request.json();
@@ -52,10 +36,7 @@ export async function onRequest(context) {
     if (!filename) {
       return new Response(JSON.stringify({ error: '缺少文件名参数' }), {
         status: 400,
-        headers: {
-          'Content-Type': 'application/json',
-          ...handleCORS(request),
-        },
+        headers: { 'Content-Type': 'application/json', ...handleCORS(request) },
       });
     }
 
@@ -65,10 +46,7 @@ export async function onRequest(context) {
         error: `文件大小超过限制 (最大 ${MAX_SIZE / 1024 / 1024}MB)`
       }), {
         status: 413,
-        headers: {
-          'Content-Type': 'application/json',
-          ...handleCORS(request),
-        },
+        headers: { 'Content-Type': 'application/json', ...handleCORS(request) },
       });
     }
 
@@ -79,10 +57,7 @@ export async function onRequest(context) {
         error: `不允许上传 ${ext} 类型的文件`
       }), {
         status: 403,
-        headers: {
-          'Content-Type': 'application/json',
-          ...handleCORS(request),
-        },
+        headers: { 'Content-Type': 'application/json', ...handleCORS(request) },
       });
     }
 
@@ -90,8 +65,7 @@ export async function onRequest(context) {
     const finalName = cleanName || `file-${Date.now()}${ext}`;
 
     const timestamp = Date.now();
-    const randomId = crypto.randomUUID ? crypto.randomUUID().substring(0, 8) :
-      Math.random().toString(36).substring(2, 10);
+    const randomId = crypto.randomUUID().substring(0, 8);
     const date = new Date();
     const datePath = `${date.getFullYear()}/${String(date.getMonth() + 1).padStart(2, '0')}`;
     const key = `uploads/${datePath}/${timestamp}-${randomId}-${finalName}`;
@@ -102,20 +76,11 @@ export async function onRequest(context) {
     const bucketName = env.R2_BUCKET_NAME || 'arguable';
 
     if (!accountId || !accessKeyId || !secretAccessKey) {
-      console.error('缺少 R2 凭证配置');
       return new Response(JSON.stringify({
         error: '服务器配置错误: 缺少 R2 凭证',
-        debug: {
-          hasAccountId: !!accountId,
-          hasAccessKeyId: !!accessKeyId,
-          hasSecretAccessKey: !!secretAccessKey,
-        }
       }), {
         status: 500,
-        headers: {
-          'Content-Type': 'application/json',
-          ...handleCORS(request),
-        },
+        headers: { 'Content-Type': 'application/json', ...handleCORS(request) },
       });
     }
 
@@ -146,24 +111,22 @@ export async function onRequest(context) {
       bucket: bucketName,
     }), {
       status: 200,
-      headers: {
-        'Content-Type': 'application/json',
-        ...handleCORS(request),
-      },
+      headers: { 'Content-Type': 'application/json', ...handleCORS(request) },
     });
 
   } catch (error) {
-    console.error('生成预签名 URL 错误:', error);
-
     return new Response(JSON.stringify({
       error: error.message || '服务器内部错误',
-      timestamp: new Date().toISOString(),
     }), {
       status: 500,
-      headers: {
-        'Content-Type': 'application/json',
-        ...handleCORS(request),
-      },
+      headers: { 'Content-Type': 'application/json', ...handleCORS(request) },
     });
   }
-}
+};
+
+export const OPTIONS: APIRoute = async ({ request }) => {
+  return new Response(null, {
+    status: 204,
+    headers: handleCORS(request),
+  });
+};
