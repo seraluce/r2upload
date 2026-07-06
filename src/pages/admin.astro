@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>管理后台 - R2 上传</title>
-  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://unpkg.com/lucide@latest" is:inline></script>
   <style>
     :root {
       --bg: #ffffff;
@@ -251,7 +251,7 @@
     <span id="toastText">已复制</span>
   </div>
 
-  <script>
+  <script is:inline>
     const R2_PUBLIC_URL_PREFIX = '';
 
     const savedTheme = localStorage.getItem('theme') || 'light';

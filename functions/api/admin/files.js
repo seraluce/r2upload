@@ -37,7 +37,8 @@ function getS3Client(env) {
 }
 
 export async function onRequestGet(context) {
-  const { request, env, url } = context;
+  const { request, env } = context;
+  const url = new URL(request.url);
 
   if (!checkAuth(request, env)) {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), {
@@ -101,7 +102,8 @@ export async function onRequestGet(context) {
 }
 
 export async function onRequestDelete(context) {
-  const { request, env, url } = context;
+  const { request, env } = context;
+  const url = new URL(request.url);
 
   if (!checkAuth(request, env)) {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), {

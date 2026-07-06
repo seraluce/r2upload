@@ -20,7 +20,8 @@ function getS3Client(env) {
 }
 
 export async function onRequestGet(context) {
-  const { request, env, url } = context;
+  const { request, env } = context;
+  const url = new URL(request.url);
   const bucketName = env.R2_BUCKET_NAME || 'arguable';
 
   try {
@@ -63,7 +64,8 @@ export async function onRequestGet(context) {
 }
 
 export async function onRequestDelete(context) {
-  const { request, env, url } = context;
+  const { request, env } = context;
+  const url = new URL(request.url);
   const bucketName = env.R2_BUCKET_NAME || 'arguable';
   const key = url.searchParams.get('key');
 
