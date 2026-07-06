@@ -3,777 +3,252 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Admin - R2 File Manager</title>
+  <title>管理后台 - R2 上传</title>
   <script src="https://unpkg.com/lucide@latest"></script>
   <style>
     :root {
-      --primary: #3b82f6;
-      --primary-hover: #2563eb;
-      --success: #10b981;
-      --danger: #ef4444;
-      --warning: #f59e0b;
       --bg: #ffffff;
-      --bg-secondary: #f8fafc;
-      --bg-tertiary: #f1f5f9;
-      --border: #e2e8f0;
-      --border-focus: #93c5fd;
-      --text: #1e293b;
-      --text-secondary: #64748b;
-      --text-muted: #94a3b8;
-      --shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-      --shadow-hover: 0 4px 6px rgba(0, 0, 0, 0.05);
+      --bg-secondary: #fafafa;
+      --bg-tertiary: #f4f4f5;
+      --border: #eaeaea;
+      --border-dark: #000000;
+      --text: #000000;
+      --text-secondary: #666666;
+      --text-muted: #999999;
       --radius: 8px;
-      --radius-lg: 12px;
-      --transition: 0.2s ease;
+      --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      --mono: 'SF Mono', 'Monaco', 'Menlo', 'Consolas', monospace;
     }
 
     [data-theme="dark"] {
-      --bg: #0f172a;
-      --bg-secondary: #1e293b;
-      --bg-tertiary: #334155;
-      --border: #334155;
-      --border-focus: #60a5fa;
-      --text: #f8fafc;
-      --text-secondary: #cbd5e1;
-      --text-muted: #64748b;
-      --shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-      --shadow-hover: 0 4px 6px rgba(0, 0, 0, 0.3);
+      --bg: #000000;
+      --bg-secondary: #0a0a0a;
+      --bg-tertiary: #111111;
+      --border: #262626;
+      --border-dark: #ffffff;
+      --text: #ededed;
+      --text-secondary: #888888;
+      --text-muted: #666666;
     }
 
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      background: var(--bg-secondary);
+      font-family: var(--font);
+      background: var(--bg);
       color: var(--text);
       min-height: 100vh;
       line-height: 1.5;
-      transition: background var(--transition), color var(--transition);
-    }
-
-    .page-container {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      padding: 24px;
-    }
-
-    .card {
-      background: var(--bg);
-      border-radius: var(--radius-lg);
-      border: 1px solid var(--border);
-      box-shadow: var(--shadow);
-      width: 100%;
-      max-width: 800px;
-      padding: 32px;
-      transition: background var(--transition), border-color var(--transition), box-shadow var(--transition);
-    }
-
-    .login-card {
-      max-width: 400px;
-    }
-
-    .header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 24px;
-      padding-bottom: 20px;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .header-left {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .header h1 {
-      font-size: 20px;
-      font-weight: 600;
-      color: var(--text);
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .header .icon-shield {
-      color: var(--primary);
-      stroke-width: 1.8;
-    }
-
-    .header-actions {
-      display: flex;
-      gap: 8px;
-    }
-
-    .icon-btn {
-      width: 36px;
-      height: 36px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: var(--bg-tertiary);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      cursor: pointer;
-      transition: all var(--transition);
-    }
-
-    .icon-btn:hover {
-      background: var(--border);
-    }
-
-    .icon-btn .icon {
-      width: 18px;
-      height: 18px;
-      color: var(--text-secondary);
-      stroke-width: 1.8;
-    }
-
-    .login-form {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-
-    .login-form h2 {
-      font-size: 18px;
-      font-weight: 600;
-      color: var(--text);
-      text-align: center;
-      margin-bottom: 8px;
-    }
-
-    .login-form .subtitle {
-      font-size: 14px;
-      color: var(--text-muted);
-      text-align: center;
-      margin-bottom: 16px;
-    }
-
-    .input-group {
-      position: relative;
-    }
-
-    .input-group .icon-lock {
-      position: absolute;
-      left: 12px;
-      top: 50%;
-      transform: translateY(-50%);
-      width: 18px;
-      height: 18px;
-      color: var(--text-muted);
-      stroke-width: 1.8;
-    }
-
-    .input-group input {
-      width: 100%;
-      padding: 12px 12px 12px 40px;
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      font-size: 14px;
-      color: var(--text);
-      background: var(--bg-secondary);
-      transition: all var(--transition);
-      font-family: inherit;
-    }
-
-    .input-group input:focus {
-      outline: none;
-      border-color: var(--border-focus);
-      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-    }
-
-    .btn {
-      padding: 12px 20px;
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      font-size: 14px;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all var(--transition);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      background: var(--bg);
-      color: var(--text-secondary);
-      font-family: inherit;
-    }
-
-    .btn .icon {
-      width: 18px;
-      height: 18px;
-      stroke-width: 1.8;
-      flex-shrink: 0;
-    }
-
-    .btn:hover:not(:disabled) {
-      background: var(--bg-tertiary);
-      border-color: var(--text-muted);
-    }
-
-    .btn:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-
-    .btn-primary {
-      background: var(--primary);
-      border-color: var(--primary);
-      color: white;
-    }
-
-    .btn-primary:hover:not(:disabled) {
-      background: var(--primary-hover);
-      border-color: var(--primary-hover);
-    }
-
-    .btn-primary .icon {
-      color: white;
-    }
-
-    .btn-danger {
-      background: transparent;
-      border-color: var(--danger);
-      color: var(--danger);
-    }
-
-    .btn-danger:hover:not(:disabled) {
-      background: rgba(239, 68, 68, 0.1);
-    }
-
-    .error-message {
-      padding: 10px 14px;
-      background: rgba(239, 68, 68, 0.1);
-      border: 1px solid rgba(239, 68, 68, 0.3);
-      border-radius: var(--radius);
-      font-size: 13px;
-      color: var(--danger);
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .error-message .icon {
-      width: 16px;
-      height: 16px;
-      flex-shrink: 0;
-    }
-
-    .toolbar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 16px;
-      gap: 12px;
-      flex-wrap: wrap;
-    }
-
-    .toolbar-left {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .file-count {
-      font-size: 13px;
-      color: var(--text-muted);
-    }
-
-    .toolbar-right {
-      display: flex;
-      gap: 8px;
-    }
-
-    .search-input {
-      position: relative;
-    }
-
-    .search-input .icon-search {
-      position: absolute;
-      left: 10px;
-      top: 50%;
-      transform: translateY(-50%);
-      width: 16px;
-      height: 16px;
-      color: var(--text-muted);
-      stroke-width: 1.8;
-    }
-
-    .search-input input {
-      padding: 8px 10px 8px 32px;
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      font-size: 13px;
-      color: var(--text);
-      background: var(--bg-secondary);
-      width: 200px;
-      transition: all var(--transition);
-      font-family: inherit;
-    }
-
-    .search-input input:focus {
-      outline: none;
-      border-color: var(--border-focus);
-    }
-
-    .files-list {
-      max-height: 500px;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-
-    .file-item {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 12px 14px;
-      background: var(--bg-secondary);
-      border-radius: var(--radius);
-      border: 1px solid var(--border);
-      font-size: 13px;
-      transition: all var(--transition);
-    }
-
-    .file-item:hover {
-      border-color: var(--text-muted);
-    }
-
-    .file-item .icon-file {
-      width: 20px;
-      height: 20px;
-      color: var(--text-muted);
-      flex-shrink: 0;
-      stroke-width: 1.8;
-    }
-
-    .file-item .info {
-      flex: 1;
-      min-width: 0;
-    }
-
-    .file-item .info .name {
-      color: var(--text);
-      font-weight: 400;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      font-size: 13px;
-    }
-
-    .file-item .info .path {
-      color: var(--text-muted);
-      font-size: 11px;
-      margin-top: 2px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    .file-item .info .meta {
-      color: var(--text-muted);
-      font-size: 11px;
-      margin-top: 2px;
-    }
-
-    .file-item .actions {
-      display: flex;
-      gap: 4px;
-      flex-shrink: 0;
-    }
-
-    .file-item .action-btn {
-      width: 32px;
-      height: 32px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      cursor: pointer;
-      transition: all var(--transition);
-      padding: 0;
-    }
-
-    .file-item .action-btn:hover {
-      background: var(--bg-tertiary);
-    }
-
-    .file-item .action-btn .icon {
-      width: 15px;
-      height: 15px;
-      stroke-width: 1.8;
-      color: var(--text-muted);
-    }
-
-    .file-item .action-btn.delete:hover {
-      border-color: rgba(239, 68, 68, 0.3);
-      background: rgba(239, 68, 68, 0.1);
-    }
-
-    .file-item .action-btn.delete:hover .icon {
-      color: var(--danger);
-    }
-
-    .file-item .action-btn.preview:hover {
-      border-color: rgba(59, 130, 246, 0.3);
-      background: rgba(59, 130, 246, 0.1);
-    }
-
-    .file-item .action-btn.preview:hover .icon {
-      color: var(--primary);
-    }
-
-    .file-item .action-btn.copy:hover {
-      border-color: rgba(16, 185, 129, 0.3);
-      background: rgba(16, 185, 129, 0.1);
-    }
-
-    .file-item .action-btn.copy:hover .icon {
-      color: var(--success);
-    }
-
-    .empty-state {
-      text-align: center;
-      padding: 48px;
-      color: var(--text-muted);
-      font-size: 14px;
-    }
-
-    .empty-state .icon {
-      width: 40px;
-      height: 40px;
-      margin-bottom: 12px;
-      opacity: 0.3;
-    }
-
-    .loading-state {
-      text-align: center;
-      padding: 48px;
-      color: var(--text-muted);
-      font-size: 14px;
-    }
-
-    .loading-state .icon {
-      width: 28px;
-      height: 28px;
-      margin-bottom: 12px;
-      animation: spin 1s linear infinite;
-    }
-
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-
-    .back-link {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 13px;
-      color: var(--text-muted);
-      text-decoration: none;
-      margin-bottom: 20px;
-      transition: color var(--transition);
-    }
-
-    .back-link:hover {
-      color: var(--text-secondary);
-    }
-
-    .back-link .icon {
-      width: 16px;
-      height: 16px;
-      stroke-width: 1.8;
-    }
-
-    .modal-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.5);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-      padding: 24px;
-      display: none;
-    }
-
-    .modal-overlay.active {
-      display: flex;
-    }
-
-    .modal {
-      background: var(--bg);
-      border-radius: var(--radius-lg);
-      border: 1px solid var(--border);
-      max-width: 90vw;
-      max-height: 90vh;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
-
-    .modal-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 16px 20px;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .modal-header h3 {
-      font-size: 15px;
-      font-weight: 600;
-      color: var(--text);
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      flex: 1;
-    }
-
-    .modal-close {
-      width: 32px;
-      height: 32px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: var(--bg-tertiary);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      cursor: pointer;
-      transition: all var(--transition);
-      flex-shrink: 0;
-      margin-left: 12px;
-    }
-
-    .modal-close:hover {
-      background: var(--border);
-    }
-
-    .modal-close .icon {
-      width: 16px;
-      height: 16px;
-      color: var(--text-secondary);
-      stroke-width: 1.8;
-    }
-
-    .modal-body {
-      padding: 20px;
-      overflow: auto;
-      flex: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-width: 300px;
-      min-height: 200px;
-    }
-
-    .modal-body img {
-      max-width: 100%;
-      max-height: 70vh;
-      object-fit: contain;
-    }
-
-    .modal-body video {
-      max-width: 100%;
-      max-height: 70vh;
-    }
-
-    .modal-body audio {
-      width: 100%;
-      min-width: 300px;
-    }
-
-    .modal-body iframe {
-      width: 600px;
-      height: 500px;
-      border: none;
-    }
-
-    .modal-body .text-preview {
-      background: var(--bg-secondary);
-      padding: 16px;
-      border-radius: var(--radius);
-      border: 1px solid var(--border);
-      font-family: monospace;
-      font-size: 12px;
-      white-space: pre-wrap;
-      word-break: break-all;
-      max-height: 500px;
-      overflow: auto;
-      width: 600px;
-      color: var(--text);
-    }
-
-    .modal-footer {
-      padding: 12px 20px;
-      border-top: 1px solid var(--border);
-      display: flex;
-      justify-content: flex-end;
-      gap: 8px;
-    }
-
-    .toast {
-      position: fixed;
-      bottom: 24px;
-      left: 50%;
-      transform: translateX(-50%) translateY(100px);
-      background: var(--text);
-      color: var(--bg);
-      padding: 10px 20px;
-      border-radius: var(--radius);
-      font-size: 13px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-      z-index: 2000;
-      transition: transform 0.3s ease;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .toast.show {
-      transform: translateX(-50%) translateY(0);
-    }
-
-    .toast .icon {
-      width: 16px;
-      height: 16px;
-    }
+      -webkit-font-smoothing: antialiased;
+      transition: background 0.15s ease, color 0.15s ease;
+    }
+
+    .page-container { display: flex; justify-content: center; min-height: 100vh; padding: 40px 24px; }
+    .card { width: 100%; max-width: 800px; }
+
+    /* Header */
+    .header { margin-bottom: 32px; }
+    .header-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+    .header-title { display: flex; align-items: center; gap: 10px; }
+    .header-title .logo-icon { width: 24px; height: 24px; color: var(--text); stroke-width: 1.5; }
+    .header-title h1 { font-size: 20px; font-weight: 600; letter-spacing: -0.02em; }
+    .header-actions { display: flex; gap: 8px; }
+    .icon-btn { background: transparent; border: 1px solid var(--border); border-radius: var(--radius); width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background 0.15s ease; }
+    .icon-btn:hover { background: var(--bg-tertiary); }
+    .icon-btn .icon { width: 16px; height: 16px; color: var(--text-secondary); stroke-width: 1.5; }
+    .header-desc { font-size: 14px; color: var(--text-secondary); }
+
+    /* Login */
+    .login-card { max-width: 400px; }
+    .login-icon-wrap { display: flex; justify-content: center; margin-bottom: 16px; }
+    .login-icon-wrap .icon { width: 40px; height: 40px; color: var(--text); stroke-width: 1; }
+    .login-title { font-size: 18px; font-weight: 600; text-align: center; margin-bottom: 4px; letter-spacing: -0.02em; }
+    .login-subtitle { font-size: 13px; color: var(--text-muted); text-align: center; margin-bottom: 24px; }
+    .login-form { display: flex; flex-direction: column; gap: 12px; }
+    .input-group { position: relative; }
+    .input-group .input-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: var(--text-muted); stroke-width: 1.5; }
+    .input-group input { width: 100%; padding: 10px 12px 10px 36px; border: 1px solid var(--border); border-radius: var(--radius); font-size: 13px; color: var(--text); background: var(--bg); transition: border-color 0.15s ease; font-family: var(--font); }
+    .input-group input:focus { outline: none; border-color: var(--border-dark); }
+    .input-group input::placeholder { color: var(--text-muted); }
+    .error-message { padding: 8px 12px; border: 1px solid var(--border-dark); border-radius: var(--radius); font-size: 12px; color: var(--text); display: flex; align-items: center; gap: 6px; }
+    .error-message .icon { width: 14px; height: 14px; stroke-width: 1.5; flex-shrink: 0; }
+    .btn { padding: 8px 16px; border: 1px solid var(--border); border-radius: var(--radius); font-size: 13px; font-weight: 500; cursor: pointer; transition: background 0.15s ease; display: flex; align-items: center; justify-content: center; gap: 6px; background: var(--bg); color: var(--text); font-family: var(--font); }
+    .btn .icon { width: 14px; height: 14px; stroke-width: 1.5; flex-shrink: 0; }
+    .btn:hover:not(:disabled) { background: var(--bg-tertiary); }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-primary { background: var(--text); color: var(--bg); border-color: var(--text); }
+    .btn-primary:hover:not(:disabled) { opacity: 0.9; background: var(--text); }
+    .btn-primary .icon { color: var(--bg); }
+
+    /* Back link */
+    .back-link { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; color: var(--text-muted); text-decoration: none; margin-bottom: 20px; transition: color 0.15s ease; }
+    .back-link:hover { color: var(--text); }
+    .back-link .icon { width: 14px; height: 14px; stroke-width: 1.5; }
+
+    /* Toolbar */
+    .toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; gap: 12px; flex-wrap: wrap; }
+    .toolbar-left { display: flex; align-items: center; gap: 12px; }
+    .file-count { font-size: 12px; color: var(--text-muted); font-family: var(--mono); }
+    .toolbar-right { display: flex; gap: 8px; }
+    .search-input { position: relative; }
+    .search-input .search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); width: 14px; height: 14px; color: var(--text-muted); stroke-width: 1.5; }
+    .search-input input { padding: 6px 10px 6px 30px; border: 1px solid var(--border); border-radius: var(--radius); font-size: 12px; color: var(--text); background: var(--bg); width: 200px; transition: border-color 0.15s ease; font-family: var(--font); }
+    .search-input input:focus { outline: none; border-color: var(--border-dark); }
+    .search-input input::placeholder { color: var(--text-muted); }
+
+    /* Files table */
+    .files-list { border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+    .file-item { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-bottom: 1px solid var(--border); font-size: 13px; transition: background 0.15s ease; }
+    .file-item:last-child { border-bottom: none; }
+    .file-item:hover { background: var(--bg-secondary); }
+    .file-item .icon-file { width: 16px; height: 16px; color: var(--text-muted); stroke-width: 1.5; flex-shrink: 0; }
+    .file-item .info { flex: 1; min-width: 0; }
+    .file-item .info .name { color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
+    .file-item .info .path { color: var(--text-muted); font-size: 11px; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--mono); }
+    .file-item .info .meta { color: var(--text-muted); font-size: 11px; margin-top: 2px; font-family: var(--mono); }
+    .file-item .actions { display: flex; gap: 2px; flex-shrink: 0; }
+    .file-item .action-btn { width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; background: transparent; border: none; border-radius: 6px; cursor: pointer; transition: background 0.15s ease; padding: 0; }
+    .file-item .action-btn:hover { background: var(--bg-tertiary); }
+    .file-item .action-btn .icon { width: 14px; height: 14px; stroke-width: 1.5; color: var(--text-muted); }
+    .file-item .action-btn.delete:hover .icon { color: var(--text); }
+    .file-item .action-btn.preview:hover .icon { color: var(--text); }
+    .file-item .action-btn.copy:hover .icon { color: var(--text); }
+
+    .empty-state { text-align: center; padding: 48px 20px; color: var(--text-muted); font-size: 13px; border: 1px solid var(--border); border-radius: var(--radius); }
+    .empty-state .icon { width: 28px; height: 28px; margin-bottom: 8px; opacity: 0.3; }
+    .loading-state { text-align: center; padding: 48px 20px; color: var(--text-muted); font-size: 13px; border: 1px solid var(--border); border-radius: var(--radius); }
+    .loading-state .icon { width: 20px; height: 20px; margin-bottom: 8px; animation: spin 1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Modal */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 24px; display: none; }
+    [data-theme="dark"] .modal-overlay { background: rgba(0,0,0,0.8); }
+    .modal-overlay.active { display: flex; }
+    .modal { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); max-width: 90vw; max-height: 90vh; display: flex; flex-direction: column; overflow: hidden; }
+    .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--border); gap: 12px; }
+    .modal-header h3 { font-size: 13px; font-weight: 500; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+    .modal-close { width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; background: transparent; border: none; border-radius: 6px; cursor: pointer; transition: background 0.15s ease; flex-shrink: 0; }
+    .modal-close:hover { background: var(--bg-tertiary); }
+    .modal-close .icon { width: 16px; height: 16px; color: var(--text-secondary); stroke-width: 1.5; }
+    .modal-body { padding: 16px; overflow: auto; flex: 1; display: flex; align-items: center; justify-content: center; min-width: 300px; min-height: 200px; }
+    .modal-body img { max-width: 100%; max-height: 70vh; object-fit: contain; }
+    .modal-body video { max-width: 100%; max-height: 70vh; }
+    .modal-body audio { width: 100%; min-width: 300px; }
+    .modal-body .text-preview { background: var(--bg-secondary); padding: 14px; border-radius: var(--radius); border: 1px solid var(--border); font-family: var(--mono); font-size: 12px; white-space: pre-wrap; word-break: break-all; max-height: 500px; overflow: auto; width: 600px; color: var(--text); }
+    .modal-footer { padding: 10px 16px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 8px; }
+
+    /* Toast */
+    .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--text); color: var(--bg); padding: 8px 16px; border-radius: var(--radius); font-size: 13px; z-index: 2000; transition: transform 0.2s ease; display: flex; align-items: center; gap: 6px; }
+    .toast.show { transform: translateX(-50%) translateY(0); }
+    .toast .icon { width: 14px; height: 14px; stroke-width: 1.5; }
 
     @media (max-width: 600px) {
-      .card {
-        padding: 20px 16px;
-      }
-
-      .toolbar {
-        flex-direction: column;
-        align-items: stretch;
-      }
-
-      .toolbar-right {
-        justify-content: flex-end;
-      }
-
-      .search-input input {
-        width: 100%;
-      }
-
-      .file-item {
-        flex-wrap: wrap;
-      }
-
-      .file-item .actions {
-        width: 100%;
-        justify-content: flex-end;
-      }
+      .page-container { padding: 20px 16px; }
+      .toolbar { flex-direction: column; align-items: stretch; }
+      .toolbar-right { justify-content: flex-end; }
+      .search-input input { width: 100%; }
+      .file-item { flex-wrap: wrap; }
+      .file-item .actions { width: 100%; justify-content: flex-end; }
     }
   </style>
 </head>
 <body>
   <div class="page-container">
-    <div class="card" id="loginCard" style="max-width: 400px;">
+    <!-- Login Card -->
+    <div class="card login-card" id="loginCard">
       <a href="/" class="back-link">
         <i data-lucide="arrow-left" class="icon"></i>
-        Back to upload
+        返回上传
       </a>
-
-      <div style="text-align: center; margin-bottom: 24px;">
-        <div style="display: flex; justify-content: center; margin-bottom: 12px;">
-          <i data-lucide="shield" style="width: 48px; height: 48px; color: var(--primary); stroke-width: 1.5;"></i>
-        </div>
-        <h2 style="font-size: 18px; font-weight: 600; color: var(--text); margin-bottom: 4px;">Admin Panel</h2>
-        <p style="font-size: 13px; color: var(--text-muted);">Enter password to continue</p>
+      <div class="login-icon-wrap">
+        <i data-lucide="lock" class="icon"></i>
       </div>
-
+      <h2 class="login-title">管理后台</h2>
+      <p class="login-subtitle">请输入密码以继续</p>
       <div class="login-form">
         <div class="input-group">
-          <i data-lucide="lock" class="icon-lock"></i>
-          <input type="password" id="passwordInput" placeholder="Password" />
+          <i data-lucide="key" class="input-icon"></i>
+          <input type="password" id="passwordInput" placeholder="密码" />
         </div>
-        <div id="loginError" style="display: none;" class="error-message">
+        <div id="loginError" style="display:none;" class="error-message">
           <i data-lucide="alert-circle" class="icon"></i>
-          <span id="loginErrorText">Invalid password</span>
+          <span id="loginErrorText">密码错误</span>
         </div>
         <button class="btn btn-primary" id="loginBtn">
           <i data-lucide="log-in" class="icon"></i>
-          Sign in
+          登录
         </button>
       </div>
     </div>
 
-    <div class="card" id="adminCard" style="display: none;">
+    <!-- Admin Card -->
+    <div class="card" id="adminCard" style="display:none;">
       <div class="header">
-        <div class="header-left">
-          <i data-lucide="folder-open" class="icon-shield" width="24" height="24"></i>
-          <h1>File Manager</h1>
+        <div class="header-top">
+          <div class="header-title">
+            <i data-lucide="folder-open" class="logo-icon"></i>
+            <h1>文件管理</h1>
+          </div>
+          <div class="header-actions">
+            <button class="icon-btn" id="themeToggle" title="切换主题">
+              <i data-lucide="moon" class="icon" id="themeIcon"></i>
+            </button>
+            <button class="icon-btn" id="logoutBtn" title="退出登录">
+              <i data-lucide="log-out" class="icon"></i>
+            </button>
+          </div>
         </div>
-        <div class="header-actions">
-          <button class="icon-btn" id="themeToggle" title="Toggle theme">
-            <i data-lucide="moon" class="icon" id="themeIcon"></i>
-          </button>
-          <button class="icon-btn" id="logoutBtn" title="Logout">
-            <i data-lucide="log-out" class="icon"></i>
-          </button>
-        </div>
+        <p class="header-desc">管理存储桶中的所有文件</p>
       </div>
 
       <div class="toolbar">
         <div class="toolbar-left">
           <div class="search-input">
-            <i data-lucide="search" class="icon-search"></i>
-            <input type="text" id="searchInput" placeholder="Search files..." />
+            <i data-lucide="search" class="search-icon"></i>
+            <input type="text" id="searchInput" placeholder="搜索文件..." />
           </div>
-          <span class="file-count" id="fileCount">0 files</span>
+          <span class="file-count" id="fileCount">0 个文件</span>
         </div>
         <div class="toolbar-right">
           <button class="btn" id="refreshBtn">
             <i data-lucide="refresh-cw" class="icon"></i>
-            Refresh
+            刷新
           </button>
         </div>
       </div>
 
-      <div class="files-list" id="filesList">
+      <div id="filesList">
         <div class="loading-state">
           <i data-lucide="loader-circle" class="icon"></i>
-          <div>Loading files...</div>
+          <div>加载中...</div>
         </div>
       </div>
     </div>
   </div>
 
+  <!-- Preview Modal -->
   <div class="modal-overlay" id="previewModal">
     <div class="modal">
       <div class="modal-header">
-        <h3 id="previewFileName">File Preview</h3>
+        <h3 id="previewFileName">文件预览</h3>
         <button class="modal-close" id="closePreview">
           <i data-lucide="x" class="icon"></i>
         </button>
       </div>
-      <div class="modal-body" id="previewBody">
-      </div>
+      <div class="modal-body" id="previewBody"></div>
       <div class="modal-footer">
         <button class="btn" id="copyUrlFromPreview">
           <i data-lucide="link" class="icon"></i>
-          Copy URL
+          复制链接
         </button>
       </div>
     </div>
   </div>
 
+  <!-- Toast -->
   <div class="toast" id="toast">
-    <i data-lucide="check-circle" class="icon"></i>
-    <span id="toastText">Copied!</span>
+    <i data-lucide="check" class="icon" id="toastIcon"></i>
+    <span id="toastText">已复制</span>
   </div>
 
   <script>
@@ -786,335 +261,180 @@
     let filteredFiles = [];
     let currentPreviewKey = '';
 
-    function showToast(message, type = 'success') {
+    function showToast(message, type) {
       const toast = document.getElementById('toast');
       const toastText = document.getElementById('toastText');
-      const toastIcon = toast.querySelector('.icon');
-
+      const toastIcon = document.getElementById('toastIcon');
       toastText.textContent = message;
-
-      if (type === 'success') {
-        toastIcon.setAttribute('data-lucide', 'check-circle');
-      } else if (type === 'error') {
-        toastIcon.setAttribute('data-lucide', 'x-circle');
-      } else if (type === 'info') {
-        toastIcon.setAttribute('data-lucide', 'info');
-      }
-
+      const iconMap = { success:'check', error:'x', info:'info' };
+      toastIcon.setAttribute('data-lucide', iconMap[type] || 'check');
       lucide.createIcons();
       toast.classList.add('show');
-
-      setTimeout(() => {
-        toast.classList.remove('show');
-      }, 2500);
+      setTimeout(() => { toast.classList.remove('show'); }, 2000);
     }
 
     function formatFileSize(bytes) {
       if (bytes === 0) return '0 B';
       const units = ['B', 'KB', 'MB', 'GB', 'TB'];
       const i = Math.floor(Math.log(bytes) / Math.log(1024));
-      const size = (bytes / Math.pow(1024, i)).toFixed(1);
-      return `${size} ${units[i]}`;
+      return `${(bytes / Math.pow(1024, i)).toFixed(1)} ${units[i]}`;
     }
 
     function formatTime(isoString) {
       const date = new Date(isoString);
-      return date.toLocaleString('zh-CN', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      });
+      return date.toLocaleString('zh-CN', { year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' });
     }
 
     function getFileIcon(filename) {
       const ext = filename.substring(filename.lastIndexOf('.')).toLowerCase();
       const iconMap = {
-        '.pdf': 'file-text',
-        '.doc': 'file-text',
-        '.docx': 'file-text',
-        '.txt': 'file-text',
-        '.md': 'file-text',
-        '.jpg': 'image',
-        '.jpeg': 'image',
-        '.png': 'image',
-        '.gif': 'image',
-        '.svg': 'image',
-        '.webp': 'image',
-        '.bmp': 'image',
-        '.mp4': 'video',
-        '.mov': 'video',
-        '.avi': 'video',
-        '.webm': 'video',
-        '.mkv': 'video',
-        '.mp3': 'music',
-        '.wav': 'music',
-        '.flac': 'music',
-        '.ogg': 'music',
-        '.zip': 'archive',
-        '.rar': 'archive',
-        '.tar': 'archive',
-        '.gz': 'archive',
-        '.7z': 'archive',
-        '.json': 'file-code',
-        '.js': 'file-code',
-        '.ts': 'file-code',
-        '.html': 'file-code',
-        '.css': 'file-code',
-        '.py': 'file-code',
-        '.csv': 'file-spreadsheet',
-        '.xls': 'file-spreadsheet',
-        '.xlsx': 'file-spreadsheet',
-        '.ppt': 'file-presentation',
-        '.pptx': 'file-presentation',
+        '.pdf':'file-text','.doc':'file-text','.docx':'file-text','.txt':'file-text','.md':'file-text',
+        '.jpg':'image','.jpeg':'image','.png':'image','.gif':'image','.svg':'image','.webp':'image','.bmp':'image',
+        '.mp4':'video','.mov':'video','.avi':'video','.webm':'video','.mkv':'video',
+        '.mp3':'music','.wav':'music','.flac':'music','.ogg':'music',
+        '.zip':'archive','.rar':'archive','.tar':'archive','.gz':'archive','.7z':'archive',
+        '.json':'file-code','.js':'file-code','.ts':'file-code','.html':'file-code','.css':'file-code','.py':'file-code',
+        '.csv':'file-spreadsheet','.xls':'file-spreadsheet','.xlsx':'file-spreadsheet',
+        '.ppt':'file-presentation','.pptx':'file-presentation',
       };
       return iconMap[ext] || 'file';
     }
 
     function canPreview(filename) {
       const ext = filename.substring(filename.lastIndexOf('.')).toLowerCase();
-      const previewable = ['.jpg', '.jpeg', '.png', '.gif', '.svg', '.webp', '.bmp', '.mp4', '.webm', '.mp3', '.ogg', '.wav', '.txt', '.md', '.json', '.csv'];
-      return previewable.includes(ext);
+      return ['.jpg','.jpeg','.png','.gif','.svg','.webp','.bmp','.mp4','.webm','.mp3','.ogg','.wav','.txt','.md','.json','.csv'].includes(ext);
     }
-
-    function isImage(filename) {
-      const ext = filename.substring(filename.lastIndexOf('.')).toLowerCase();
-      return ['.jpg', '.jpeg', '.png', '.gif', '.svg', '.webp', '.bmp'].includes(ext);
-    }
-
-    function isVideo(filename) {
-      const ext = filename.substring(filename.lastIndexOf('.')).toLowerCase();
-      return ['.mp4', '.webm'].includes(ext);
-    }
-
-    function isAudio(filename) {
-      const ext = filename.substring(filename.lastIndexOf('.')).toLowerCase();
-      return ['.mp3', '.ogg', '.wav'].includes(ext);
-    }
-
-    function isText(filename) {
-      const ext = filename.substring(filename.lastIndexOf('.')).toLowerCase();
-      return ['.txt', '.md', '.json', '.csv', '.html', '.css', '.js'].includes(ext);
-    }
+    function isImage(n){const e=n.substring(n.lastIndexOf('.')).toLowerCase();return['.jpg','.jpeg','.png','.gif','.svg','.webp','.bmp'].includes(e);}
+    function isVideo(n){const e=n.substring(n.lastIndexOf('.')).toLowerCase();return['.mp4','.webm'].includes(e);}
+    function isAudio(n){const e=n.substring(n.lastIndexOf('.')).toLowerCase();return['.mp3','.ogg','.wav'].includes(e);}
+    function isText(n){const e=n.substring(n.lastIndexOf('.')).toLowerCase();return['.txt','.md','.json','.csv','.html','.css','.js'].includes(e);}
 
     async function checkAuth() {
       try {
-        const response = await fetch('/api/admin/auth', {
-          credentials: 'same-origin'
-        });
-        const data = await response.json();
-        return data.authenticated;
-      } catch {
-        return false;
-      }
+        const r = await fetch('/api/admin/auth', { credentials: 'same-origin' });
+        const d = await r.json();
+        return d.authenticated;
+      } catch { return false; }
     }
 
     async function login(password) {
       try {
-        const response = await fetch('/api/admin/auth', {
+        const r = await fetch('/api/admin/auth', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'same-origin',
           body: JSON.stringify({ password })
         });
-        const data = await response.json();
-        return data.success;
-      } catch {
-        return false;
-      }
+        const d = await r.json();
+        return d.success;
+      } catch { return false; }
     }
 
     async function loadFiles() {
-      const filesList = document.getElementById('filesList');
-      filesList.innerHTML = `
-        <div class="loading-state">
-          <i data-lucide="loader-circle" class="icon"></i>
-          <div>Loading files...</div>
-        </div>
-      `;
+      const list = document.getElementById('filesList');
+      list.innerHTML = `<div class="loading-state"><i data-lucide="loader-circle" class="icon"></i><div>加载中...</div></div>`;
       lucide.createIcons();
-
       try {
-        const response = await fetch('/api/admin/files', {
-          credentials: 'same-origin'
-        });
-
-        if (response.status === 401) {
-          showLogin();
-          return;
-        }
-
-        const data = await response.json();
-        currentFiles = data.files || [];
+        const r = await fetch('/api/admin/files', { credentials: 'same-origin' });
+        if (r.status === 401) { showLogin(); return; }
+        const d = await r.json();
+        currentFiles = d.files || [];
         filteredFiles = [...currentFiles];
         renderFiles();
-      } catch (err) {
-        filesList.innerHTML = `
-          <div class="empty-state">
-            <i data-lucide="alert-circle" class="icon" style="color: var(--danger); opacity: 0.5;"></i>
-            <div>Failed to load files</div>
-          </div>
-        `;
+      } catch {
+        list.innerHTML = `<div class="empty-state"><i data-lucide="alert-circle" class="icon" style="opacity:0.4;"></i><div>加载失败</div></div>`;
         lucide.createIcons();
       }
     }
 
     function renderFiles() {
-      const filesList = document.getElementById('filesList');
-      const fileCount = document.getElementById('fileCount');
-
-      fileCount.textContent = `${filteredFiles.length} file${filteredFiles.length !== 1 ? 's' : ''}`;
-
+      const list = document.getElementById('filesList');
+      const count = document.getElementById('fileCount');
+      count.textContent = `${filteredFiles.length} 个文件`;
       if (filteredFiles.length === 0) {
-        filesList.innerHTML = `
-          <div class="empty-state">
-            <i data-lucide="folder" class="icon"></i>
-            <div>No files found</div>
-          </div>
-        `;
+        list.innerHTML = `<div class="empty-state"><i data-lucide="folder" class="icon"></i><div>暂无文件</div></div>`;
         lucide.createIcons();
         return;
       }
-
-      filesList.innerHTML = filteredFiles.map(file => `
-        <div class="file-item" data-key="${file.key}">
-          <i data-lucide="${getFileIcon(file.name)}" class="icon-file"></i>
+      list.innerHTML = `<div class="files-list">${filteredFiles.map(f => `
+        <div class="file-item">
+          <i data-lucide="${getFileIcon(f.name)}" class="icon-file"></i>
           <div class="info">
-            <div class="name" title="${file.name}">${file.name}</div>
-            <div class="path" title="${file.key}">${file.key}</div>
-            <div class="meta">${formatFileSize(file.size)} · ${formatTime(file.lastModified)}</div>
+            <div class="name" title="${f.name}">${f.name}</div>
+            <div class="path" title="${f.key}">${f.key}</div>
+            <div class="meta">${formatFileSize(f.size)} · ${formatTime(f.lastModified)}</div>
           </div>
           <div class="actions">
-            ${canPreview(file.name) ? `
-              <button class="action-btn preview" data-action="preview" data-key="${file.key}" data-name="${file.name}" title="Preview">
-                <i data-lucide="eye" class="icon"></i>
-              </button>
-            ` : ''}
-            <button class="action-btn copy" data-action="copy" data-key="${file.key}" title="Copy URL">
-              <i data-lucide="link" class="icon"></i>
-            </button>
-            <button class="action-btn delete" data-action="delete" data-key="${file.key}" data-name="${file.name}" title="Delete">
-              <i data-lucide="trash-2" class="icon"></i>
-            </button>
+            ${canPreview(f.name) ? `<button class="action-btn preview" data-action="preview" data-key="${f.key}" data-name="${f.name}" title="预览"><i data-lucide="eye" class="icon"></i></button>` : ''}
+            <button class="action-btn copy" data-action="copy" data-key="${f.key}" title="复制链接"><i data-lucide="link" class="icon"></i></button>
+            <button class="action-btn delete" data-action="delete" data-key="${f.key}" data-name="${f.name}" title="删除"><i data-lucide="trash-2" class="icon"></i></button>
           </div>
         </div>
-      `).join('');
-
+      `).join('')}</div>`;
       lucide.createIcons();
     }
 
-    function filterFiles(query) {
-      const lowerQuery = query.toLowerCase();
-      filteredFiles = currentFiles.filter(file =>
-        file.name.toLowerCase().includes(lowerQuery) ||
-        file.key.toLowerCase().includes(lowerQuery)
-      );
+    function filterFiles(q) {
+      const lq = q.toLowerCase();
+      filteredFiles = currentFiles.filter(f => f.name.toLowerCase().includes(lq) || f.key.toLowerCase().includes(lq));
       renderFiles();
     }
 
     async function deleteFile(key, name) {
-      if (!confirm(`Delete "${name}"?`)) return;
-
+      if (!confirm(`确定删除「${name}」吗？`)) return;
       try {
-        const response = await fetch(`/api/admin/files?key=${encodeURIComponent(key)}`, {
-          method: 'DELETE',
-          credentials: 'same-origin'
-        });
-
-        if (response.status === 401) {
-          showLogin();
-          return;
-        }
-
-        if (response.ok) {
-          showToast('File deleted', 'success');
-          loadFiles();
-        } else {
-          showToast('Delete failed', 'error');
-        }
-      } catch {
-        showToast('Delete failed', 'error');
-      }
+        const r = await fetch(`/api/admin/files?key=${encodeURIComponent(key)}`, { method: 'DELETE', credentials: 'same-origin' });
+        if (r.status === 401) { showLogin(); return; }
+        if (r.ok) { showToast('已删除', 'success'); loadFiles(); }
+        else { showToast('删除失败', 'error'); }
+      } catch { showToast('删除失败', 'error'); }
     }
 
     function copyUrl(key) {
       const url = R2_PUBLIC_URL_PREFIX ? `${R2_PUBLIC_URL_PREFIX}/${key}` : key;
-      navigator.clipboard.writeText(url).then(() => {
-        showToast('URL copied!', 'success');
-      }).catch(() => {
-        showToast('Copy failed', 'error');
-      });
+      navigator.clipboard.writeText(url).then(() => showToast('链接已复制', 'success')).catch(() => showToast('复制失败', 'error'));
     }
 
     async function previewFile(key, name) {
       currentPreviewKey = key;
       const modal = document.getElementById('previewModal');
-      const previewBody = document.getElementById('previewBody');
-      const previewFileName = document.getElementById('previewFileName');
-
-      previewFileName.textContent = name;
-      previewBody.innerHTML = `
-        <div class="loading-state" style="padding: 40px;">
-          <i data-lucide="loader-circle" class="icon"></i>
-          <div>Loading...</div>
-        </div>
-      `;
+      const body = document.getElementById('previewBody');
+      const fname = document.getElementById('previewFileName');
+      fname.textContent = name;
+      body.innerHTML = `<div class="loading-state" style="padding:40px;border:none;"><i data-lucide="loader-circle" class="icon"></i><div>加载中...</div></div>`;
       lucide.createIcons();
       modal.classList.add('active');
-
       try {
-        const response = await fetch(`/api/admin/files?key=${encodeURIComponent(key)}`, {
-          credentials: 'same-origin'
-        });
-
-        if (response.status === 401) {
-          showLogin();
-          modal.classList.remove('active');
-          return;
-        }
-
         if (isImage(name)) {
-          previewBody.innerHTML = `<img src="${R2_PUBLIC_URL_PREFIX}/${key}" alt="${name}" />`;
+          body.innerHTML = `<img src="${R2_PUBLIC_URL_PREFIX}/${key}" alt="${name}" />`;
         } else if (isVideo(name)) {
-          previewBody.innerHTML = `<video src="${R2_PUBLIC_URL_PREFIX}/${key}" controls autoplay></video>`;
+          body.innerHTML = `<video src="${R2_PUBLIC_URL_PREFIX}/${key}" controls autoplay></video>`;
         } else if (isAudio(name)) {
-          previewBody.innerHTML = `<audio src="${R2_PUBLIC_URL_PREFIX}/${key}" controls autoplay></audio>`;
+          body.innerHTML = `<audio src="${R2_PUBLIC_URL_PREFIX}/${key}" controls autoplay></audio>`;
         } else if (isText(name)) {
-          const textResponse = await fetch(`${R2_PUBLIC_URL_PREFIX}/${key}`);
-          const text = await textResponse.text();
-          previewBody.innerHTML = `<div class="text-preview">${escapeHtml(text)}</div>`;
+          const tr = await fetch(`${R2_PUBLIC_URL_PREFIX}/${key}`);
+          const text = await tr.text();
+          body.innerHTML = `<div class="text-preview">${escapeHtml(text)}</div>`;
         } else {
-          previewBody.innerHTML = `
-            <div class="empty-state">
-              <i data-lucide="file" class="icon"></i>
-              <div>Preview not available for this file type</div>
-            </div>
-          `;
+          body.innerHTML = `<div class="empty-state" style="border:none;"><i data-lucide="file" class="icon"></i><div>此文件类型暂不支持预览</div></div>`;
           lucide.createIcons();
         }
       } catch {
-        previewBody.innerHTML = `
-          <div class="empty-state">
-            <i data-lucide="alert-circle" class="icon" style="color: var(--danger);"></i>
-            <div>Failed to load preview</div>
-          </div>
-        `;
+        body.innerHTML = `<div class="empty-state" style="border:none;"><i data-lucide="alert-circle" class="icon"></i><div>预览加载失败</div></div>`;
         lucide.createIcons();
       }
     }
 
     function escapeHtml(text) {
-      const div = document.createElement('div');
-      div.textContent = text;
-      return div.innerHTML;
+      const d = document.createElement('div');
+      d.textContent = text;
+      return d.innerHTML;
     }
 
     function showLogin() {
       document.getElementById('loginCard').style.display = 'block';
       document.getElementById('adminCard').style.display = 'none';
     }
-
     function showAdmin() {
       document.getElementById('loginCard').style.display = 'none';
       document.getElementById('adminCard').style.display = 'block';
@@ -1122,20 +442,16 @@
     }
 
     function handleThemeToggle() {
-      const currentTheme = document.documentElement.getAttribute('data-theme');
-      const newTheme = currentTheme === 'light' ? 'dark' : 'light';
-      document.documentElement.setAttribute('data-theme', newTheme);
-      localStorage.setItem('theme', newTheme);
+      const cur = document.documentElement.getAttribute('data-theme');
+      const next = cur === 'light' ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', next);
+      localStorage.setItem('theme', next);
       updateThemeIcon();
     }
-
     function updateThemeIcon() {
-      const theme = document.documentElement.getAttribute('data-theme');
-      const icon = document.getElementById('themeIcon');
-      if (icon) {
-        icon.setAttribute('data-lucide', theme === 'dark' ? 'sun' : 'moon');
-        lucide.createIcons();
-      }
+      const t = document.documentElement.getAttribute('data-theme');
+      const i = document.getElementById('themeIcon');
+      if (i) { i.setAttribute('data-lucide', t === 'dark' ? 'sun' : 'moon'); lucide.createIcons(); }
     }
 
     function logout() {
@@ -1144,92 +460,54 @@
     }
 
     document.getElementById('loginBtn').addEventListener('click', async () => {
-      const password = document.getElementById('passwordInput').value;
-      const errorDiv = document.getElementById('loginError');
-      const errorText = document.getElementById('loginErrorText');
-      const loginBtn = document.getElementById('loginBtn');
-
-      if (!password) {
-        errorText.textContent = 'Please enter password';
-        errorDiv.style.display = 'flex';
-        return;
-      }
-
-      loginBtn.disabled = true;
-      errorDiv.style.display = 'none';
-
-      const success = await login(password);
-
-      if (success) {
-        showAdmin();
-      } else {
-        errorText.textContent = 'Invalid password';
-        errorDiv.style.display = 'flex';
-        loginBtn.disabled = false;
-      }
+      const pwd = document.getElementById('passwordInput').value;
+      const err = document.getElementById('loginError');
+      const errText = document.getElementById('loginErrorText');
+      const btn = document.getElementById('loginBtn');
+      if (!pwd) { errText.textContent = '请输入密码'; err.style.display = 'flex'; return; }
+      btn.disabled = true; err.style.display = 'none';
+      const ok = await login(pwd);
+      if (ok) showAdmin();
+      else { errText.textContent = '密码错误'; err.style.display = 'flex'; btn.disabled = false; }
     });
 
     document.getElementById('passwordInput').addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        document.getElementById('loginBtn').click();
-      }
+      if (e.key === 'Enter') document.getElementById('loginBtn').click();
     });
 
     document.getElementById('refreshBtn').addEventListener('click', loadFiles);
     document.getElementById('themeToggle').addEventListener('click', handleThemeToggle);
     document.getElementById('logoutBtn').addEventListener('click', logout);
-
-    document.getElementById('searchInput').addEventListener('input', (e) => {
-      filterFiles(e.target.value);
-    });
+    document.getElementById('searchInput').addEventListener('input', (e) => filterFiles(e.target.value));
 
     document.getElementById('filesList').addEventListener('click', (e) => {
       const btn = e.target.closest('[data-action]');
       if (!btn) return;
-
       const action = btn.dataset.action;
       const key = btn.dataset.key;
       const name = btn.dataset.name;
-
-      if (action === 'delete') {
-        deleteFile(key, name);
-      } else if (action === 'copy') {
-        copyUrl(key);
-      } else if (action === 'preview') {
-        previewFile(key, name);
-      }
+      if (action === 'delete') deleteFile(key, name);
+      else if (action === 'copy') copyUrl(key);
+      else if (action === 'preview') previewFile(key, name);
     });
 
     document.getElementById('closePreview').addEventListener('click', () => {
       document.getElementById('previewModal').classList.remove('active');
     });
-
     document.getElementById('previewModal').addEventListener('click', (e) => {
-      if (e.target.id === 'previewModal') {
-        document.getElementById('previewModal').classList.remove('active');
-      }
+      if (e.target.id === 'previewModal') document.getElementById('previewModal').classList.remove('active');
     });
-
     document.getElementById('copyUrlFromPreview').addEventListener('click', () => {
-      if (currentPreviewKey) {
-        copyUrl(currentPreviewKey);
-      }
+      if (currentPreviewKey) copyUrl(currentPreviewKey);
     });
-
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') {
-        document.getElementById('previewModal').classList.remove('active');
-      }
+      if (e.key === 'Escape') document.getElementById('previewModal').classList.remove('active');
     });
 
     updateThemeIcon();
-
     checkAuth().then(authed => {
-      if (authed) {
-        showAdmin();
-      } else {
-        showLogin();
-      }
+      if (authed) showAdmin();
+      else showLogin();
       lucide.createIcons();
     });
   </script>

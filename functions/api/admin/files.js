@@ -74,8 +74,8 @@ export async function onRequestGet(context) {
   try {
     const bucketName = env.R2_BUCKET_NAME || 'arguable';
     const s3Client = getS3Client(env);
-    const prefix = url.searchParams.get('prefix') || 'uploads/';
-    const maxKeys = parseInt(url.searchParams.get('maxKeys') || '200');
+    const prefix = url.searchParams.get('prefix') || '';
+    const maxKeys = parseInt(url.searchParams.get('maxKeys') || '1000');
 
     let allFiles = [];
     let continuationToken = null;
