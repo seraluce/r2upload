@@ -167,6 +167,9 @@
   </style>
 </head>
 <body>
+  <!-- fileInput 放在 uploadZone 外部，避免事件冒泡冲突 -->
+  <input type="file" id="fileInput" style="display:none;" />
+
   <div class="page-container">
     <div class="card">
       <!-- Header -->
@@ -188,7 +191,6 @@
         <i data-lucide="upload" class="upload-icon"></i>
         <div class="upload-title">点击或拖拽文件到此处上传</div>
         <div class="upload-subtitle">支持所有文件类型，单个文件最大 100MB</div>
-        <input type="file" id="fileInput" />
       </div>
 
       <!-- File Info -->
@@ -272,12 +274,20 @@
   </div>
 
   <script>
+    // Safe lucide wrapper
+    function renderIcons() {
+      try { if (window.lucide) lucide.createIcons(); } catch(e) {}
+    }
+
     const savedTheme = localStorage.getItem('theme') || 'light';
     document.documentElement.setAttribute('data-theme', savedTheme);
 
     let currentFile = null;
     let isUploading = false;
     const MAX_SIZE = 100 * 1024 * 1024;
+
+    const uploadZone = document.getElementById('uploadZone');
+    const fileInput = document.getElementById('fileInput');
 
     // Theme toggle
     document.getElementById('themeToggle').addEventListener('click', () => {
@@ -292,7 +302,7 @@
       const theme = document.documentElement.getAttribute('data-theme');
       const icon = document.getElementById('themeIcon');
       icon.setAttribute('data-lucide', theme === 'dark' ? 'sun' : 'moon');
-      lucide.createIcons();
+      renderIcons();
     }
 
     function formatFileSize(bytes) {
@@ -304,7 +314,7 @@
 
     function formatTime(isoString) {
       const date = new Date(isoString);
-      return date.toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+      return date.toLocaleString('zh-CN', { month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' });
     }
 
     function getFileIcon(filename) {
@@ -330,7 +340,7 @@
       msg.className = `message ${type}`;
       msgText.textContent = text;
       msgIcon.setAttribute('data-lucide', iconMap[type] || 'info');
-      lucide.createIcons();
+      renderIcons();
     }
 
     function setStatus(status, text) {
@@ -341,7 +351,7 @@
       badge.className = `status-badge ${status}`;
       statusText.textContent = text;
       badgeIcon.setAttribute('data-lucide', iconMap[status] || 'circle');
-      lucide.createIcons();
+      renderIcons();
     }
 
     function updateProgress(percent, status) {
@@ -352,7 +362,7 @@
 
     function resetFileSelection() {
       currentFile = null;
-      document.getElementById('fileInput').value = '';
+      fileInput.value = '';
       document.getElementById('fileName').textContent = '未选择文件';
       document.getElementById('fileName').className = 'empty';
       document.getElementById('fileSize').style.display = 'none';
@@ -369,7 +379,7 @@
         return;
       }
 
-      const dangerousExt = ['.php', '.exe', '.sh', '.bat', '.js', '.html', '.htm', '.asp', '.jsp'];
+      const dangerousExt = ['.php', '.exe', '.sh', '.bat', '.html', '.htm', '.asp', '.jsp'];
       const ext = file.name.substring(file.lastIndexOf('.')).toLowerCase();
       if (dangerousExt.includes(ext)) {
         setMessage(`不允许上传 ${ext} 类型的文件`, 'error');
@@ -389,14 +399,15 @@
       setStatus('ready', '就绪');
       updateProgress(0, '就绪');
       setMessage(`已选择：${file.name}（${formatFileSize(file.size)}）`, 'info');
-      lucide.createIcons();
+      renderIcons();
     }
 
-    const uploadZone = document.getElementById('uploadZone');
-    const fileInput = document.getElementById('fileInput');
-
-    uploadZone.addEventListener('click', () => {
-      if (!isUploading) fileInput.click();
+    // Upload zone click - fileInput is outside zone so no bubble issue
+    uploadZone.addEventListener('click', (e) => {
+      if (!isUploading) {
+        e.preventDefault();
+        fileInput.click();
+      }
     });
 
     uploadZone.addEventListener('dragover', (e) => {
@@ -441,7 +452,7 @@
       document.getElementById('uploadBtnText').textContent = '上传中...';
       const uploadIcon = document.getElementById('uploadBtnIcon');
       uploadIcon.setAttribute('data-lucide', 'loader-circle');
-      lucide.createIcons();
+      renderIcons();
 
       setStatus('uploading', '获取地址...');
       setMessage('正在获取上传地址...', 'info');
@@ -513,7 +524,7 @@
         document.getElementById('clearBtn').disabled = false;
         document.getElementById('uploadBtnText').textContent = '上传到 R2';
         uploadIcon.setAttribute('data-lucide', 'arrow-up');
-        lucide.createIcons();
+        renderIcons();
       }
     });
 
@@ -522,7 +533,7 @@
       const refreshBtn = document.getElementById('refreshBtn');
       refreshBtn.classList.add('loading');
       container.innerHTML = `<div class="loading-state"><i data-lucide="loader-circle" class="icon"></i><div>加载中...</div></div>`;
-      lucide.createIcons();
+      renderIcons();
 
       try {
         const response = await fetch('/api/list');
@@ -549,10 +560,10 @@
             </div>
           `).join('')}</div>`;
         }
-        lucide.createIcons();
+        renderIcons();
       } catch (err) {
         container.innerHTML = `<div class="empty-state"><i data-lucide="alert-circle" class="icon" style="opacity:0.4;"></i><div>加载失败</div></div>`;
-        lucide.createIcons();
+        renderIcons();
       } finally {
         refreshBtn.classList.remove('loading');
       }
@@ -596,9 +607,10 @@
       }
     });
 
+    // Init
     updateThemeIcon();
     loadFiles();
-    lucide.createIcons();
+    renderIcons();
   </script>
 </body>
 </html>
