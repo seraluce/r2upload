@@ -1,9 +1,32 @@
+---
+import { siteConfig } from '../config.js';
+---
 <!DOCTYPE html>
 <html lang="zh-CN" data-theme="light">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>R2 上传</title>
+  <meta name="theme-color" content={siteConfig.pwa.themeColor} />
+  <meta name="description" content={siteConfig.seo.description} />
+  <meta name="keywords" content={siteConfig.seo.keywords} />
+  <meta name="author" content={siteConfig.author.name} />
+  <link rel="canonical" href={siteConfig.url} />
+  <link rel="icon" type="image/svg+xml" href={siteConfig.logo} />
+  <link rel="apple-touch-icon" href={siteConfig.logo} />
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <title>{siteConfig.seo.title}</title>
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content={siteConfig.name} />
+  <meta property="og:title" content={siteConfig.seo.title} />
+  <meta property="og:description" content={siteConfig.seo.description} />
+  <meta property="og:url" content={siteConfig.url} />
+  <meta property="og:image" content={siteConfig.seo.ogImage} />
+  <meta property="og:locale" content="zh_CN" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content={siteConfig.seo.title} />
+  <meta name="twitter:description" content={siteConfig.seo.description} />
+  <meta name="twitter:image" content={siteConfig.seo.ogImage} />
+  {siteConfig.seo.twitterHandle && <meta name="twitter:site" content={siteConfig.seo.twitterHandle} />}
   <script src="https://unpkg.com/lucide@latest" is:inline></script>
   <style>
     :root {
@@ -18,6 +41,7 @@
       --radius: 8px;
       --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
       --mono: 'SF Mono', 'Monaco', 'Menlo', 'Consolas', monospace;
+      --nav-height: 56px;
     }
 
     [data-theme="dark"] {
@@ -43,10 +67,74 @@
       transition: background 0.15s ease, color 0.15s ease;
     }
 
+    /* Navbar */
+    .navbar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: saturate(180%) blur(12px);
+      -webkit-backdrop-filter: saturate(180%) blur(12px);
+    }
+    .nav-inner {
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 0 24px;
+      height: var(--nav-height);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+      font-size: 15px;
+      letter-spacing: -0.02em;
+      color: var(--text);
+      text-decoration: none;
+    }
+    .nav-brand .icon { width: 20px; height: 20px; stroke-width: 1.5; }
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .nav-link {
+      padding: 6px 12px;
+      font-size: 13px;
+      color: var(--text-secondary);
+      text-decoration: none;
+      border-radius: 6px;
+      transition: color 0.15s ease, background 0.15s ease;
+    }
+    .nav-link:hover { color: var(--text); background: var(--bg-tertiary); }
+    .nav-link.active { color: var(--text); }
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .theme-toggle {
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+    .theme-toggle:hover { background: var(--bg-tertiary); }
+    .theme-toggle .icon { width: 16px; height: 16px; color: var(--text-secondary); stroke-width: 1.5; }
+
     .page-container {
       display: flex;
       justify-content: center;
-      min-height: 100vh;
       padding: 40px 24px;
     }
 
@@ -56,15 +144,9 @@
     }
 
     /* Header */
-    .header { margin-bottom: 32px; }
-    .header-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
-    .header-title { display: flex; align-items: center; gap: 10px; }
-    .header-title .logo-icon { width: 24px; height: 24px; color: var(--text); stroke-width: 1.5; }
-    .header-title h1 { font-size: 20px; font-weight: 600; letter-spacing: -0.02em; }
-    .theme-toggle { background: transparent; border: 1px solid var(--border); border-radius: var(--radius); width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background 0.15s ease; }
-    .theme-toggle:hover { background: var(--bg-tertiary); }
-    .theme-toggle .icon { width: 16px; height: 16px; color: var(--text-secondary); stroke-width: 1.5; }
-    .header-desc { font-size: 14px; color: var(--text-secondary); }
+    .header { margin-bottom: 28px; }
+    .header h1 { font-size: 22px; font-weight: 600; letter-spacing: -0.02em; margin-bottom: 6px; }
+    .header p { font-size: 14px; color: var(--text-secondary); }
 
     /* Upload Zone */
     .upload-zone { border: 1px dashed var(--border); border-radius: var(--radius); padding: 40px 20px; text-align: center; cursor: pointer; transition: border-color 0.15s ease, background 0.15s ease; background: var(--bg-secondary); margin-bottom: 16px; }
@@ -83,6 +165,7 @@
     .file-info .name { font-size: 13px; font-weight: 500; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .file-info .empty { font-size: 13px; color: var(--text-muted); }
     .file-info .size { font-size: 12px; color: var(--text-muted); font-family: var(--mono); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px; }
+
     /* Actions */
     .actions { display: flex; gap: 8px; margin-bottom: 12px; }
     .btn { flex: 1; padding: 8px 16px; border: 1px solid var(--border); border-radius: var(--radius); font-size: 13px; font-weight: 500; cursor: pointer; transition: background 0.15s ease; display: flex; align-items: center; justify-content: center; gap: 6px; background: var(--bg); color: var(--text); font-family: var(--font); }
@@ -101,7 +184,7 @@
     .progress-text { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted); margin-top: 4px; font-family: var(--mono); }
 
     /* Message */
-    .message { padding: 10px 14px; border: 1px solid var(--border); border-radius: var(--radius); font-size: 13px; display: flex; align-items: center; gap: 8px; color: var(--text-secondary); margin-bottom: 24px; }
+    .message { padding: 10px 14px; border: 1px solid var(--border); border-radius: var(--radius); font-size: 13px; display: flex; align-items: center; gap: 8px; color: var(--text-secondary); }
     .message .icon { width: 14px; height: 14px; stroke-width: 1.5; flex-shrink: 0; }
     .message.info .icon { color: var(--text-muted); }
     .message.success { border-color: var(--text); }
@@ -110,9 +193,6 @@
     .message.error .icon { color: var(--text); }
     .message.warning { border-color: var(--text); }
     .message.warning .icon { color: var(--text); }
-
-    /* Divider */
-    .divider { height: 1px; background: var(--border); margin: 24px 0; }
 
     @keyframes spin { to { transform: rotate(360deg); } }
 
@@ -124,40 +204,48 @@
     .footer a:hover { color: var(--text); }
 
     @media (max-width: 600px) {
-      .page-container { padding: 20px 16px; }
+      .nav-inner { padding: 0 16px; }
+      .page-container { padding: 24px 16px; }
       .file-info { flex-direction: column; align-items: stretch; gap: 8px; }
       .actions .btn { padding: 8px 12px; font-size: 12px; }
     }
   </style>
 </head>
 <body>
-  <!-- fileInput 放在 uploadZone 外部，避免事件冒泡冲突 -->
   <input type="file" id="fileInput" style="display:none;" />
+
+  <nav class="navbar">
+    <div class="nav-inner">
+      <a href="/" class="nav-brand">
+        <i data-lucide="hard-drive" class="icon"></i>
+        <span>{siteConfig.name}</span>
+      </a>
+      <div class="nav-right">
+        <div class="nav-links">
+          {siteConfig.nav.map(item => (
+            <a href={item.href} class={`nav-link${item.href === '/' ? ' active' : ''}`}>{item.name}</a>
+          ))}
+        </div>
+        <button class="theme-toggle" id="themeToggle" title="切换主题">
+          <i data-lucide="moon" class="icon" id="themeIcon"></i>
+        </button>
+      </div>
+    </div>
+  </nav>
 
   <div class="page-container">
     <div class="card">
-      <!-- Header -->
       <div class="header">
-        <div class="header-top">
-          <div class="header-title">
-            <i data-lucide="hard-drive" class="logo-icon"></i>
-            <h1>R2 上传</h1>
-          </div>
-          <button class="theme-toggle" id="themeToggle">
-            <i data-lucide="moon" class="icon" id="themeIcon"></i>
-          </button>
-        </div>
-        <p class="header-desc">使用预签名 URL 直传至 Cloudflare R2，无需服务端中转</p>
+        <h1>{siteConfig.description.split('，')[0]}</h1>
+        <p>{siteConfig.description.split('，')[1] || ''}</p>
       </div>
 
-      <!-- Upload Zone -->
       <div class="upload-zone" id="uploadZone">
         <i data-lucide="upload" class="upload-icon"></i>
         <div class="upload-title">点击或拖拽文件到此处上传</div>
-        <div class="upload-subtitle">支持所有文件类型，单个文件最大 100MB</div>
+        <div class="upload-subtitle">支持所有文件类型，单个文件最大 {siteConfig.upload.maxSizeMB}MB</div>
       </div>
 
-      <!-- File Info -->
       <div class="file-info" id="fileInfo">
         <div class="details">
           <i data-lucide="file" class="icon-file"></i>
@@ -166,7 +254,6 @@
         </div>
       </div>
 
-      <!-- Actions -->
       <div class="actions">
         <button class="btn" id="clearBtn">
           <i data-lucide="x" class="icon"></i>
@@ -178,7 +265,6 @@
         </button>
       </div>
 
-      <!-- Progress -->
       <div class="progress-wrapper" id="progressWrapper">
         <div class="progress-bar">
           <div class="fill" id="progressFill" style="width: 0%;"></div>
@@ -189,27 +275,19 @@
         </div>
       </div>
 
-      <!-- Message -->
       <div class="message info" id="message">
         <i data-lucide="info" class="icon" id="messageIcon"></i>
         <span id="messageText">请选择文件并点击上传，或拖拽文件到上方区域</span>
       </div>
 
-      <!-- Footer -->
       <div class="footer">
         <i data-lucide="lock" class="icon"></i>
         直接上传到 R2
-        <span class="divider-text">/</span>
-        <a href="/admin">
-          <i data-lucide="settings" class="icon"></i>
-          管理后台
-        </a>
       </div>
     </div>
   </div>
 
   <script is:inline>
-    // Safe lucide wrapper
     function renderIcons() {
       try { if (window.lucide) lucide.createIcons(); } catch(e) {}
     }
@@ -224,7 +302,6 @@
     const uploadZone = document.getElementById('uploadZone');
     const fileInput = document.getElementById('fileInput');
 
-    // Theme toggle
     document.getElementById('themeToggle').addEventListener('click', () => {
       const currentTheme = document.documentElement.getAttribute('data-theme');
       const newTheme = currentTheme === 'light' ? 'dark' : 'light';
@@ -245,11 +322,6 @@
       const units = ['B', 'KB', 'MB', 'GB', 'TB'];
       const i = Math.floor(Math.log(bytes) / Math.log(1024));
       return `${(bytes / Math.pow(1024, i)).toFixed(1)} ${units[i]}`;
-    }
-
-    function formatTime(isoString) {
-      const date = new Date(isoString);
-      return date.toLocaleString('zh-CN', { month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' });
     }
 
     function getFileIcon(filename) {
@@ -314,7 +386,6 @@
       const sizeEl = document.getElementById('fileSize');
       const iconEl = document.querySelector('.file-info .icon-file');
 
-      // 缩短超长文件名用于显示
       const displayName = file.name.length > 40
         ? file.name.substring(0, 20) + '...' + file.name.substring(file.name.length - 15)
         : file.name;
@@ -331,12 +402,8 @@
       renderIcons();
     }
 
-    // Upload zone click - fileInput is outside zone so no bubble issue
     uploadZone.addEventListener('click', (e) => {
-      if (!isUploading) {
-        e.preventDefault();
-        fileInput.click();
-      }
+      if (!isUploading) { e.preventDefault(); fileInput.click(); }
     });
 
     uploadZone.addEventListener('dragover', (e) => {
@@ -363,10 +430,7 @@
     });
 
     document.getElementById('clearBtn').addEventListener('click', () => {
-      if (isUploading) {
-        setMessage('上传中，无法清除', 'warning');
-        return;
-      }
+      if (isUploading) { setMessage('上传中，无法清除', 'warning'); return; }
       resetFileSelection();
       setMessage('已清除文件选择', 'info');
     });
@@ -394,32 +458,23 @@
         await new Promise((resolve, reject) => {
           const xhr = new XMLHttpRequest();
           xhr.open('POST', '/api/upload', true);
-
           xhr.upload.addEventListener('progress', (e) => {
             if (e.lengthComputable) {
               const percent = Math.round((e.loaded / e.total) * 100);
               updateProgress(percent, `上传中 ${percent}%`);
             }
           });
-
-          xhr.onload = async function() {
+          xhr.onload = function() {
             if (xhr.status >= 200 && xhr.status < 300) {
-              try {
-                const data = JSON.parse(xhr.responseText);
-                resolve(data);
-              } catch (e) {
-                reject(new Error('响应解析失败'));
-              }
+              try { resolve(JSON.parse(xhr.responseText)); }
+              catch (e) { reject(new Error('响应解析失败')); }
             } else {
               try {
                 const errData = JSON.parse(xhr.responseText);
                 reject(new Error(errData.error || `上传失败（${xhr.status}）`));
-              } catch (e) {
-                reject(new Error(`上传失败（${xhr.status}）`));
-              }
+              } catch (e) { reject(new Error(`上传失败（${xhr.status}）`)); }
             }
           };
-
           xhr.onerror = () => reject(new Error('网络错误，上传中断'));
           xhr.ontimeout = () => reject(new Error('上传超时'));
           xhr.timeout = 120000;
@@ -444,21 +499,14 @@
 
     document.addEventListener('keydown', (e) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-        if (!isUploading && currentFile) {
-          e.preventDefault();
-          document.getElementById('uploadBtn').click();
-        }
+        if (!isUploading && currentFile) { e.preventDefault(); document.getElementById('uploadBtn').click(); }
       }
     });
 
     window.addEventListener('beforeunload', (e) => {
-      if (isUploading) {
-        e.preventDefault();
-        e.returnValue = '文件正在上传中，确定要离开吗？';
-      }
+      if (isUploading) { e.preventDefault(); e.returnValue = '文件正在上传中，确定要离开吗？'; }
     });
 
-    // Init
     updateThemeIcon();
     renderIcons();
   </script>

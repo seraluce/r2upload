@@ -1,9 +1,25 @@
+---
+import { siteConfig } from '../config.js';
+---
 <!DOCTYPE html>
 <html lang="zh-CN" data-theme="light">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>管理后台 - R2 上传</title>
+  <meta name="theme-color" content={siteConfig.pwa.themeColor} />
+  <meta name="description" content={siteConfig.seo.description} />
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="canonical" href={`${siteConfig.url}/admin`} />
+  <link rel="icon" type="image/svg+xml" href={siteConfig.logo} />
+  <link rel="apple-touch-icon" href={siteConfig.logo} />
+  <title>管理后台 - {siteConfig.name}</title>
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content={siteConfig.name} />
+  <meta property="og:title" content={`管理后台 - ${siteConfig.name}`} />
+  <meta property="og:description" content={siteConfig.seo.description} />
+  <meta property="og:url" content={`${siteConfig.url}/admin`} />
+  <meta property="og:image" content={siteConfig.seo.ogImage} />
+  <meta property="og:locale" content="zh_CN" />
   <script src="https://unpkg.com/lucide@latest" is:inline></script>
   <style>
     :root {
@@ -18,6 +34,7 @@
       --radius: 8px;
       --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
       --mono: 'SF Mono', 'Monaco', 'Menlo', 'Consolas', monospace;
+      --nav-height: 56px;
     }
 
     [data-theme="dark"] {
@@ -43,23 +60,81 @@
       transition: background 0.15s ease, color 0.15s ease;
     }
 
-    .page-container { display: flex; justify-content: center; min-height: 100vh; padding: 40px 24px; }
+    /* Navbar */
+    .navbar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: saturate(180%) blur(12px);
+      -webkit-backdrop-filter: saturate(180%) blur(12px);
+    }
+    .nav-inner {
+      max-width: 840px;
+      margin: 0 auto;
+      padding: 0 24px;
+      height: var(--nav-height);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+      font-size: 15px;
+      letter-spacing: -0.02em;
+      color: var(--text);
+      text-decoration: none;
+    }
+    .nav-brand .icon { width: 20px; height: 20px; stroke-width: 1.5; }
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .nav-link {
+      padding: 6px 12px;
+      font-size: 13px;
+      color: var(--text-secondary);
+      text-decoration: none;
+      border-radius: 6px;
+      transition: color 0.15s ease, background 0.15s ease;
+    }
+    .nav-link:hover { color: var(--text); background: var(--bg-tertiary); }
+    .nav-link.active { color: var(--text); }
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .theme-toggle {
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+    .theme-toggle:hover { background: var(--bg-tertiary); }
+    .theme-toggle .icon { width: 16px; height: 16px; color: var(--text-secondary); stroke-width: 1.5; }
+
+    .page-container { display: flex; justify-content: center; padding: 40px 24px; }
     .card { width: 100%; max-width: 800px; }
 
     /* Header */
-    .header { margin-bottom: 32px; }
-    .header-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
-    .header-title { display: flex; align-items: center; gap: 10px; }
-    .header-title .logo-icon { width: 24px; height: 24px; color: var(--text); stroke-width: 1.5; }
-    .header-title h1 { font-size: 20px; font-weight: 600; letter-spacing: -0.02em; }
-    .header-actions { display: flex; gap: 8px; }
-    .icon-btn { background: transparent; border: 1px solid var(--border); border-radius: var(--radius); width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background 0.15s ease; }
-    .icon-btn:hover { background: var(--bg-tertiary); }
-    .icon-btn .icon { width: 16px; height: 16px; color: var(--text-secondary); stroke-width: 1.5; }
+    .header { margin-bottom: 24px; }
+    .header h1 { font-size: 22px; font-weight: 600; letter-spacing: -0.02em; margin-bottom: 4px; }
     .header-desc { font-size: 14px; color: var(--text-secondary); }
 
     /* Login */
-    .login-card { max-width: 400px; }
+    .login-card { max-width: 400px; margin: 0 auto; }
     .login-icon-wrap { display: flex; justify-content: center; margin-bottom: 16px; }
     .login-icon-wrap .icon { width: 40px; height: 40px; color: var(--text); stroke-width: 1; }
     .login-title { font-size: 18px; font-weight: 600; text-align: center; margin-bottom: 4px; letter-spacing: -0.02em; }
@@ -80,11 +155,6 @@
     .btn-primary:hover:not(:disabled) { opacity: 0.9; background: var(--text); }
     .btn-primary .icon { color: var(--bg); }
 
-    /* Back link */
-    .back-link { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; color: var(--text-muted); text-decoration: none; margin-bottom: 20px; transition: color 0.15s ease; }
-    .back-link:hover { color: var(--text); }
-    .back-link .icon { width: 14px; height: 14px; stroke-width: 1.5; }
-
     /* Toolbar */
     .toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; gap: 12px; flex-wrap: wrap; }
     .toolbar-left { display: flex; align-items: center; gap: 12px; }
@@ -96,7 +166,7 @@
     .search-input input:focus { outline: none; border-color: var(--border-dark); }
     .search-input input::placeholder { color: var(--text-muted); }
 
-    /* Files table */
+    /* Files list */
     .files-list { border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
     .file-item { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-bottom: 1px solid var(--border); font-size: 13px; transition: background 0.15s ease; }
     .file-item:last-child { border-bottom: none; }
@@ -144,6 +214,7 @@
     .toast .icon { width: 14px; height: 14px; stroke-width: 1.5; }
 
     @media (max-width: 600px) {
+      .nav-inner { padding: 0 16px; }
       .page-container { padding: 20px 16px; }
       .toolbar { flex-direction: column; align-items: stretch; }
       .toolbar-right { justify-content: flex-end; }
@@ -154,18 +225,35 @@
   </style>
 </head>
 <body>
+  <nav class="navbar">
+    <div class="nav-inner">
+      <a href="/" class="nav-brand">
+        <i data-lucide="hard-drive" class="icon"></i>
+        <span>{siteConfig.name}</span>
+      </a>
+      <div class="nav-right">
+        <div class="nav-links">
+          {siteConfig.nav.map(item => (
+            <a href={item.href} class={`nav-link${item.href === '/admin' ? ' active' : ''}`}>{item.name}</a>
+          ))}
+        </div>
+        <button class="theme-toggle" id="themeToggle" title="切换主题">
+          <i data-lucide="moon" class="icon" id="themeIcon"></i>
+        </button>
+      </div>
+    </div>
+  </nav>
+
   <div class="page-container">
     <!-- Login Card -->
     <div class="card login-card" id="loginCard">
-      <a href="/" class="back-link">
-        <i data-lucide="arrow-left" class="icon"></i>
-        返回上传
-      </a>
-      <div class="login-icon-wrap">
-        <i data-lucide="lock" class="icon"></i>
+      <div class="header" style="text-align:center;">
+        <div class="login-icon-wrap">
+          <i data-lucide="lock" class="icon"></i>
+        </div>
+        <h1>管理后台</h1>
+        <p class="header-desc">请输入密码以继续</p>
       </div>
-      <h2 class="login-title">管理后台</h2>
-      <p class="login-subtitle">请输入密码以继续</p>
       <div class="login-form">
         <div class="input-group">
           <i data-lucide="key" class="input-icon"></i>
@@ -185,20 +273,7 @@
     <!-- Admin Card -->
     <div class="card" id="adminCard" style="display:none;">
       <div class="header">
-        <div class="header-top">
-          <div class="header-title">
-            <i data-lucide="folder-open" class="logo-icon"></i>
-            <h1>文件管理</h1>
-          </div>
-          <div class="header-actions">
-            <button class="icon-btn" id="themeToggle" title="切换主题">
-              <i data-lucide="moon" class="icon" id="themeIcon"></i>
-            </button>
-            <button class="icon-btn" id="logoutBtn" title="退出登录">
-              <i data-lucide="log-out" class="icon"></i>
-            </button>
-          </div>
-        </div>
+        <h1>文件管理</h1>
         <p class="header-desc">管理存储桶中的所有文件</p>
       </div>
 
@@ -211,7 +286,11 @@
           <span class="file-count" id="fileCount">0 个文件</span>
         </div>
         <div class="toolbar-right">
-          <button class="btn" id="refreshBtn">
+          <button class="btn" id="logoutBtn">
+            <i data-lucide="log-out" class="icon"></i>
+            退出
+          </button>
+          <button class="btn btn-primary" id="refreshBtn">
             <i data-lucide="refresh-cw" class="icon"></i>
             刷新
           </button>
@@ -269,7 +348,7 @@
       toastText.textContent = message;
       const iconMap = { success:'check', error:'x', info:'info' };
       toastIcon.setAttribute('data-lucide', iconMap[type] || 'check');
-      lucide.createIcons();
+      try { lucide.createIcons(); } catch(e) {}
       toast.classList.add('show');
       setTimeout(() => { toast.classList.remove('show'); }, 2000);
     }
@@ -334,7 +413,7 @@
     async function loadFiles() {
       const list = document.getElementById('filesList');
       list.innerHTML = `<div class="loading-state"><i data-lucide="loader-circle" class="icon"></i><div>加载中...</div></div>`;
-      lucide.createIcons();
+      try { lucide.createIcons(); } catch(e) {}
       try {
         const r = await fetch('/api/admin/files', { credentials: 'same-origin' });
         if (r.status === 401) { showLogin(); return; }
@@ -345,7 +424,7 @@
         renderFiles();
       } catch {
         list.innerHTML = `<div class="empty-state"><i data-lucide="alert-circle" class="icon" style="opacity:0.4;"></i><div>加载失败</div></div>`;
-        lucide.createIcons();
+        try { lucide.createIcons(); } catch(e) {}
       }
     }
 
@@ -355,7 +434,7 @@
       count.textContent = `${filteredFiles.length} 个文件`;
       if (filteredFiles.length === 0) {
         list.innerHTML = `<div class="empty-state"><i data-lucide="folder" class="icon"></i><div>暂无文件</div></div>`;
-        lucide.createIcons();
+        try { lucide.createIcons(); } catch(e) {}
         return;
       }
       list.innerHTML = `<div class="files-list">${filteredFiles.map(f => {
@@ -378,7 +457,7 @@
           </div>
         </div>
       `}).join('')}</div>`;
-      lucide.createIcons();
+      try { lucide.createIcons(); } catch(e) {}
     }
 
     function filterFiles(q) {
@@ -413,7 +492,7 @@
       const fname = document.getElementById('previewFileName');
       fname.textContent = name;
       body.innerHTML = `<div class="loading-state" style="padding:40px;border:none;"><i data-lucide="loader-circle" class="icon"></i><div>加载中...</div></div>`;
-      lucide.createIcons();
+      try { lucide.createIcons(); } catch(e) {}
       modal.classList.add('active');
       try {
         const fileUrl = getFileUrl(key);
@@ -433,7 +512,7 @@
               </div>
             </div>
           `;
-          lucide.createIcons();
+          try { lucide.createIcons(); } catch(e) {}
         } else if (isVideo(name)) {
           body.innerHTML = `<video src="${fileUrl}" controls autoplay></video>`;
         } else if (isAudio(name)) {
@@ -444,11 +523,11 @@
           body.innerHTML = `<div class="text-preview">${escapeHtml(text)}</div>`;
         } else {
           body.innerHTML = `<div class="empty-state" style="border:none;"><i data-lucide="file" class="icon"></i><div>此文件类型暂不支持预览</div></div>`;
-          lucide.createIcons();
+          try { lucide.createIcons(); } catch(e) {}
         }
       } catch {
         body.innerHTML = `<div class="empty-state" style="border:none;"><i data-lucide="alert-circle" class="icon"></i><div>预览加载失败</div></div>`;
-        lucide.createIcons();
+        try { lucide.createIcons(); } catch(e) {}
       }
     }
 
@@ -478,7 +557,7 @@
     function updateThemeIcon() {
       const t = document.documentElement.getAttribute('data-theme');
       const i = document.getElementById('themeIcon');
-      if (i) { i.setAttribute('data-lucide', t === 'dark' ? 'sun' : 'moon'); lucide.createIcons(); }
+      if (i) { i.setAttribute('data-lucide', t === 'dark' ? 'sun' : 'moon'); try { lucide.createIcons(); } catch(e) {} }
     }
 
     function logout() {
@@ -535,7 +614,7 @@
     checkAuth().then(authed => {
       if (authed) showAdmin();
       else showLogin();
-      lucide.createIcons();
+      try { lucide.createIcons(); } catch(e) {}
     });
   </script>
 </body>
