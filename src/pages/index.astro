@@ -380,7 +380,7 @@
       }
 
       const dangerousExt = ['.php', '.exe', '.sh', '.bat', '.html', '.htm', '.asp', '.jsp'];
-      const ext = file.name.substring(file.lastIndexOf('.')).toLowerCase();
+      const ext = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
       if (dangerousExt.includes(ext)) {
         setMessage(`不允许上传 ${ext} 类型的文件`, 'error');
         return;
