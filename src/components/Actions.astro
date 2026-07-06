@@ -1,0 +1,112 @@
+<script>
+  interface Props {
+    onClear: () => void;
+    onUpload: () => void;
+    onReset: () => void;
+    disabled: boolean;
+    isUploading: boolean;
+    showReset: boolean;
+  }
+
+  const { onClear, onUpload, onReset, disabled, isUploading, showReset } = Astro.props;
+</script>
+
+<style>
+  .actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .actions .btn {
+    flex: 1;
+    min-width: 100px;
+    padding: 10px 20px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--transition);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: var(--bg);
+    color: var(--text-secondary);
+    font-family: inherit;
+  }
+
+  .actions .btn .icon {
+    width: 18px;
+    height: 18px;
+    stroke-width: 1.8;
+    flex-shrink: 0;
+  }
+
+  .actions .btn:hover:not(:disabled) {
+    background: var(--bg-tertiary);
+    border-color: var(--text-muted);
+  }
+
+  .actions .btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .actions .btn-primary {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: white;
+  }
+
+  .actions .btn-primary:hover:not(:disabled) {
+    background: var(--primary-hover);
+    border-color: var(--primary-hover);
+  }
+
+  .actions .btn-primary .icon {
+    color: white;
+  }
+
+  .actions .btn-secondary {
+    background: var(--bg);
+    border-color: var(--border);
+    color: var(--text-secondary);
+  }
+
+  .actions .btn-secondary:hover:not(:disabled) {
+    background: var(--bg-tertiary);
+    border-color: var(--text-muted);
+  }
+
+  .actions .btn-secondary .icon {
+    color: var(--text-muted);
+  }
+
+  @media (max-width: 600px) {
+    .actions .btn {
+      min-width: 80px;
+      padding: 8px 14px;
+      font-size: 13px;
+    }
+  }
+</style>
+
+<div class="actions">
+  {showReset ? (
+    <button class="btn btn-secondary" onclick={onReset}>
+      <i data-lucide="rotate-ccw" class="icon"></i>
+      Reset
+    </button>
+  ) : (
+    <button class="btn btn-secondary" onclick={onClear} disabled={isUploading}>
+      <i data-lucide="x" class="icon"></i>
+      Clear
+    </button>
+  )}
+  <button class="btn btn-primary" onclick={onUpload} disabled={disabled || isUploading}>
+    <i data-lucide={isUploading ? 'loader-circle' : 'arrow-up'} class="icon"></i>
+    {isUploading ? 'Uploading...' : 'Upload to R2'}
+  </button>
+</div>

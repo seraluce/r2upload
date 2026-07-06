@@ -1,0 +1,194 @@
+<script>
+  interface UploadRecord {
+    id: string;
+    filename: string;
+    size: number;
+    key: string;
+    timestamp: number;
+    status: 'success' | 'error';
+  }
+
+  interface Props {
+    records: UploadRecord[];
+    onClear: () => void;
+  }
+
+  const { records, onClear } = Astro.props;
+
+  const formatFileSize = (bytes: number): string => {
+    if (bytes === 0) return '0 B';
+    const units = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(1024));
+    const size = (bytes / Math.pow(1024, i)).toFixed(1);
+    return `${size} ${units[i]}`;
+  };
+
+  const formatTime = (timestamp: number): string => {
+    const date = new Date(timestamp);
+    return date.toLocaleString('zh-CN', {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+</script>
+
+<style>
+  .history-section {
+    margin-top: 32px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+  }
+
+  .history-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+
+  .history-header h3 {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .history-header .icon {
+    width: 18px;
+    height: 18px;
+    color: var(--text-muted);
+    stroke-width: 1.8;
+  }
+
+  .history-header .clear-btn {
+    font-size: 12px;
+    color: var(--text-muted);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: var(--radius);
+    transition: all var(--transition);
+  }
+
+  .history-header .clear-btn:hover {
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+  }
+
+  .history-list {
+    max-height: 200px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .history-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: var(--bg-secondary);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    font-size: 13px;
+  }
+
+  .history-item .icon-file {
+    width: 16px;
+    height: 16px;
+    color: var(--text-muted);
+    flex-shrink: 0;
+  }
+
+  .history-item .info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .history-item .info .name {
+    color: var(--text);
+    font-weight: 400;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .history-item .info .meta {
+    color: var(--text-muted);
+    font-size: 11px;
+    margin-top: 2px;
+  }
+
+  .history-item .status-icon {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+  }
+
+  .history-item .status-icon.success {
+    color: var(--success);
+  }
+
+  .history-item .status-icon.error {
+    color: var(--danger);
+  }
+
+  .empty-history {
+    text-align: center;
+    padding: 24px;
+    color: var(--text-muted);
+    font-size: 13px;
+  }
+
+  .empty-history .icon {
+    width: 24px;
+    height: 24px;
+    margin-bottom: 8px;
+    opacity: 0.5;
+  }
+</style>
+
+<div class="history-section">
+  <div class="history-header">
+    <h3>
+      <i data-lucide="history" class="icon"></i>
+      Upload History
+    </h3>
+    {records.length > 0 && (
+      <button class="clear-btn" onclick={onClear}>
+        Clear
+      </button>
+    )}
+  </div>
+
+  {records.length === 0 ? (
+    <div class="empty-history">
+      <i data-lucide="clock" class="icon"></i>
+      <div>No uploads yet</div>
+    </div>
+  ) : (
+    <div class="history-list">
+      {records.map((record) => (
+        <div class="history-item" key={record.id}>
+          <i data-lucide="file" class="icon-file"></i>
+          <div class="info">
+            <div class="name">{record.filename}</div>
+            <div class="meta">
+              {formatFileSize(record.size)} · {formatTime(record.timestamp)}
+            </div>
+          </div>
+          <i 
+            data-lucide={record.status === 'success' ? 'check-circle' : 'x-circle'} 
+            class={`status-icon ${record.status}`}
+          ></i>
+        </div>
+      ))}
+    </div>
+  )}
+</div>

@@ -1,0 +1,298 @@
+<script>
+  import MainLayout from '../layouts/MainLayout.astro';
+  import Header from '../components/Header.astro';
+  import UploadZone from '../components/UploadZone.astro';
+  import FileInfo from '../components/FileInfo.astro';
+  import Actions from '../components/Actions.astro';
+  import ProgressBar from '../components/ProgressBar.astro';
+  import Message from '../components/Message.astro';
+  import FileList from '../components/FileList.astro';
+  import Footer from '../components/Footer.astro';
+
+  let currentFile: File | null = null;
+  let isUploading = false;
+  let uploadPercent = 0;
+  let uploadStatus = 'Ready to upload';
+  let messageText = 'Select a file and click upload, or drag and drop';
+  let messageType: 'info' | 'success' | 'error' | 'warning' = 'info';
+  let fileStatus: 'ready' | 'uploading' | 'success' | 'error' = 'ready';
+  let fileStatusText = 'Ready';
+  let showReset = false;
+
+  interface R2File {
+    key: string;
+    name: string;
+    size: number;
+    lastModified: string;
+    etag: string;
+  }
+
+  let r2Files: R2File[] = [];
+  let filesLoading = false;
+
+  const MAX_SIZE = 100 * 1024 * 1024;
+
+  const formatFileSize = (bytes: number): string => {
+    if (bytes === 0) return '0 B';
+    const units = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(1024));
+    const size = (bytes / Math.pow(1024, i)).toFixed(1);
+    return `${size} ${units[i]}`;
+  };
+
+  const sanitizeFilename = (filename: string): string => {
+    return filename.replace(/[^a-zA-Z0-9\u4e00-\u9fa5.\-_\s]/g, '');
+  };
+
+  const getFileExtension = (filename: string): string => {
+    return filename.substring(filename.lastIndexOf('.')).toLowerCase();
+  };
+
+  const loadFiles = async () => {
+    filesLoading = true;
+    try {
+      const response = await fetch('/api/list');
+      if (response.ok) {
+        const data = await response.json();
+        r2Files = data.files || [];
+      }
+    } catch (err) {
+      console.error('Failed to load files:', err);
+    } finally {
+      filesLoading = false;
+    }
+  };
+
+  const handleFileSelect = (file: File) => {
+    if (file.size > MAX_SIZE) {
+      setMessage(`File too large (${formatFileSize(file.size)}), please select a file smaller than ${formatFileSize(MAX_SIZE)}`, 'error');
+      resetFileSelection();
+      return;
+    }
+
+    const dangerousExt = ['.php', '.exe', '.sh', '.bat', '.js', '.html', '.htm', '.asp', '.jsp'];
+    const ext = getFileExtension(file.name);
+    if (dangerousExt.includes(ext)) {
+      setMessage(`Upload of ${ext} files is not allowed`, 'error');
+      resetFileSelection();
+      return;
+    }
+
+    const safeName = sanitizeFilename(file.name);
+    currentFile = safeName !== file.name ? new File([file], safeName, { type: file.type }) : file;
+
+    fileStatus = 'ready';
+    fileStatusText = 'Ready';
+    showReset = false;
+    resetProgress();
+    setMessage(`Selected file: ${currentFile.name} (${formatFileSize(currentFile.size)})`, 'info');
+  };
+
+  const resetFileSelection = () => {
+    currentFile = null;
+    fileStatus = 'ready';
+    fileStatusText = 'Ready';
+    showReset = false;
+    resetProgress();
+  };
+
+  const resetProgress = () => {
+    uploadPercent = 0;
+    uploadStatus = 'Ready to upload';
+  };
+
+  const setMessage = (text: string, type: 'info' | 'success' | 'error' | 'warning') => {
+    messageText = text;
+    messageType = type;
+  };
+
+  const updateProgress = (percent: number, status: string) => {
+    uploadPercent = percent;
+    uploadStatus = status;
+  };
+
+  const handleUpload = async () => {
+    if (!currentFile || isUploading) return;
+
+    isUploading = true;
+    fileStatus = 'uploading';
+    fileStatusText = 'Getting URL...';
+    setMessage('Getting upload URL...', 'info');
+    updateProgress(0, 'Requesting presigned URL...');
+
+    try {
+      const file = currentFile;
+
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          filename: file.name,
+          contentType: file.type || 'application/octet-stream',
+          size: file.size,
+        }),
+      });
+
+      if (!response.ok) {
+        let errorMsg = `Failed to get upload URL (${response.status})`;
+        try {
+          const errData = await response.json();
+          if (errData && errData.error) errorMsg = errData.error;
+        } catch (_) {}
+        throw new Error(errorMsg);
+      }
+
+      const data = await response.json();
+      if (!data.uploadURL) {
+        throw new Error('Upload URL not received');
+      }
+
+      const uploadURL = data.uploadURL;
+
+      fileStatusText = 'Uploading...';
+      setMessage(`Uploading ${file.name} ...`, 'info');
+      updateProgress(5, 'Starting upload...');
+
+      await new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('PUT', uploadURL, true);
+        xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
+
+        xhr.upload.addEventListener('progress', (e) => {
+          if (e.lengthComputable) {
+            const percent = Math.round((e.loaded / e.total) * 90) + 5;
+            updateProgress(percent, `Uploading ${percent}%`);
+          }
+        });
+
+        xhr.onload = function() {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            resolve(xhr);
+          } else {
+            reject(new Error(`Upload failed (${xhr.status})`));
+          }
+        };
+
+        xhr.onerror = function() {
+          reject(new Error('Network error, upload interrupted'));
+        };
+
+        xhr.ontimeout = function() {
+          reject(new Error('Upload timed out'));
+        };
+
+        xhr.timeout = 120000;
+        xhr.send(file);
+      });
+
+      updateProgress(100, 'Upload complete!');
+      fileStatus = 'success';
+      fileStatusText = 'Uploaded';
+      showReset = true;
+      setMessage(`Upload successful! File "${file.name}" stored to R2`, 'success');
+      if (data.key) {
+        messageText += ` (Path: ${data.key})`;
+      }
+
+      loadFiles();
+
+    } catch (err) {
+      console.error('Upload error:', err);
+      fileStatus = 'error';
+      fileStatusText = 'Failed';
+      setMessage(`Upload failed: ${(err as Error).message || 'Unknown error'}`, 'error');
+    } finally {
+      isUploading = false;
+    }
+  };
+
+  const handleClear = () => {
+    if (isUploading) {
+      setMessage('Upload in progress, cannot clear', 'warning');
+      return;
+    }
+    resetFileSelection();
+    setMessage('File selection cleared', 'info');
+  };
+
+  const handleReset = () => {
+    resetFileSelection();
+    setMessage('Select a file and click upload, or drag and drop', 'info');
+  };
+
+  const handleDeleteFile = async (key: string) => {
+    if (!confirm('Delete this file?')) return;
+
+    try {
+      const response = await fetch(`/api/list?key=${encodeURIComponent(key)}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        setMessage('File deleted successfully', 'success');
+        loadFiles();
+      } else {
+        throw new Error('Delete failed');
+      }
+    } catch (err) {
+      setMessage(`Delete failed: ${(err as Error).message}`, 'error');
+    }
+  };
+
+  const handleKeydown = (e: KeyboardEvent) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+      if (!isUploading && currentFile) {
+        e.preventDefault();
+        handleUpload();
+      }
+    }
+  };
+
+  const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+    if (isUploading) {
+      e.preventDefault();
+      e.returnValue = 'File is uploading, are you sure you want to leave?';
+    }
+  };
+
+  import.meta.onMount(() => {
+    loadFiles();
+
+    document.addEventListener('keydown', handleKeydown);
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    lucide.createIcons();
+  });
+</script>
+
+<MainLayout>
+  <Header />
+  <UploadZone onFileSelect={handleFileSelect} disabled={isUploading} />
+  <FileInfo 
+    filename={currentFile?.name} 
+    size={currentFile?.size}
+    status={fileStatus}
+    statusText={fileStatusText}
+  />
+  <Actions 
+    onClear={handleClear}
+    onUpload={handleUpload}
+    onReset={handleReset}
+    disabled={!currentFile}
+    isUploading={isUploading}
+    showReset={showReset}
+  />
+  <ProgressBar 
+    percent={uploadPercent} 
+    status={uploadStatus}
+    visible={isUploading || uploadPercent > 0}
+  />
+  <Message text={messageText} type={messageType} />
+  <FileList 
+    files={r2Files} 
+    loading={filesLoading}
+    onDelete={handleDeleteFile}
+    onRefresh={loadFiles}
+  />
+  <Footer />
+</MainLayout>
