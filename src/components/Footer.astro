@@ -23,6 +23,19 @@
   .footer .divider {
     color: var(--border);
   }
+
+  .footer .admin-link {
+    color: var(--text-muted);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: color var(--transition);
+  }
+
+  .footer .admin-link:hover {
+    color: var(--text-secondary);
+  }
 </style>
 
 <div class="footer">
@@ -30,4 +43,9 @@
   Frontend direct upload to R2
   <span class="divider">·</span>
   Presigned URL valid for 5 minutes
+  <span class="divider">·</span>
+  <a href="/admin" class="admin-link">
+    <i data-lucide="settings" class="icon"></i>
+    Admin
+  </a>
 </div>
